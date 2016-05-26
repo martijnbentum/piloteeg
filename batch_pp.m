@@ -9,9 +9,10 @@
 %addpath /home/marben/MATLAB/fieldtrip-20140901
 %addpath /home/marben/MATLAB/m_scripts
 
-addpath /home/marben/MATLAB/linux_scripts
-addpath /home/marben/EEG/fieldtrip-20160330
-addpath /home/marben/MARK_EEG/EEG
+%addpath /home/marben/MATLAB/linux_scripts
+addpath /home/marben/STUDY2/fieldtrip-20160330
+addpath /home/marben/STUDY2/
+addpath /home/marben/STUDY2/piloteeg/
 
 ft_defaults
 
