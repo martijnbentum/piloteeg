@@ -14,6 +14,10 @@ addpath /home/marben/STUDY2/fieldtrip-20160330
 addpath /home/marben/STUDY2/
 addpath /home/marben/STUDY2/piloteeg/
 
+addpath /vol/tensusers/mbentum/STUDY2/fieldtrip-20160330
+addpath /vol/tensusers/mbentum/STUDY2/EEG
+
+
 ft_defaults
 
 % preprocessing -> load data filter and creat eog channels
