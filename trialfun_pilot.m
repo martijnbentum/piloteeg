@@ -49,10 +49,31 @@ else
   event = ft_read_event(cfg.headerfile, 'headerformat', cfg.headerformat, 'eventformat', cfg.eventformat, 'dataformat', cfg.dataformat);
 end
 
+trl = [];
 selection = [];
 for i=1:numel(event)
 	if numel(event(i).value) > 1 && event(i).value(1) == cfg.trialdef.eventvalue 
-		selection = [selection event(i)];
+		%for explanation of marker id see marker id code explained txt
+		temp = event(i);
+		filename = strsplit(cfg.dataset,'_');
+		temp.filename = cfg.dataset;
+		temp.pp_id = str2num(filename{1}(7:8));
+		temp.day_id = str2num(filename{2});
+		temp.story_id = str2num(temp.value(2:3));
+		temp.reduced = str2num(temp.value(4));
+		temp.word_id = str2num(temp.value(5:7));
+		temp.duration_word = str2num(temp.value(14:16));
+		temp.tag = str2num(temp.value(18));
+		temp.closed_class = str2num(temp.value(19));
+
+		temp.pretrig = round(cfg.trialdef.prestim *hdr.Fs);
+		temp.posttrig = round(cfg.trialdef.poststim *hdr.Fs);
+		temp.begin_trl = temp.sample - temp.pretrig;
+		temp.end_trl = temp.sample + temp.posttrig;
+
+		selection = [selection temp];
+		trl = [trl; [temp.begin_trl temp.end_trl -1*temp.pretrig temp.pp_id temp.day_id temp.story_id temp.reduced temp.word_id temp.duration_word temp.tag temp.closed_class]];
+
 	end
 end
 event(1).selection =selection;
@@ -79,7 +100,7 @@ event(1).selection =selection;
 %  return
 %end
 
-trl = [33416       34615        -200];
+%trl = [33416       34615        -200];
 val = [];
 
 %% start by selecting all events

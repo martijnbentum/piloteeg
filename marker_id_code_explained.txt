@@ -1,0 +1,25 @@
+marker
+9631027910527220320
+
+story id
+963	story63	rock_unred_adj.wav MATLAB index 2:3
+
+w id (word id in story)
+1027	1000	unreduced story index 4	
+	2000	reduced story index 4
+	27	27th word in the story index 5:7
+
+vocabulary id
+90488	90000	vocabulary id index 9:12
+	488	word id in vocabulary 'his' index 9:12
+
+duration id
+7220	7000	duration id
+	220	word duration in ms index 14:16
+
+tag id
+320	3	tag id
+	2	tag (determiner) index 18
+	0	closed class index 19
+
+
