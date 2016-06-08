@@ -34,4 +34,4 @@ cfg.demean                  = 'no';
 cfg.baselinewindow          = [-0.15 0];
 
 
-cfg                         = ft_definetrial(cfg);
+%cfg                         = ft_definetrial(cfg);
