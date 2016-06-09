@@ -1,26 +1,22 @@
-%addpath /Users/fennaoosterhoff/Dropbox/matlab/fieldtrip-20140120
-%addpath /Users/fennaoosterhoff/Documents/matlab/fieldtrip-20140120
-%addpath /Users/fennaoosterhoff/Documents/MATLAB/EEG_martijn
-
-%addpath /Users/fennaoosterhoff/Dropbox/matlab/m_scripts
-%addpath /Users/martijnbentum/Dropbox/matlab/fieldtrip-20140120
-%addpath /Users/martijnbentum/Dropbox/matlab/m_scripts
-
-%addpath /home/marben/MATLAB/fieldtrip-20140901
-%addpath /home/marben/MATLAB/m_scripts
-
-%addpath /home/marben/MATLAB/linux_scripts
-addpath /home/marben/STUDY2/fieldtrip-20160330
-addpath /home/marben/STUDY2/
-addpath /home/marben/STUDY2/piloteeg/
-
-%%pony paths
-addpath /vol/tensusers/mbentum/STUDY2/fieldtrip-20160330
-addpath /vol/tensusers/mbentum/STUDY2/EEG
-addpath /vol/tensusers/mbentum/STUDY2/piloteeg
-ft_defaults
 
 % preprocessing -> load data filter and creat eog channels
+%load all filesnames
+fn = dir('EEG/*.vhdr')
+%prepare configuration files
+cfg = [];
+for i =1:length(fn)
+        cfg{i} = define_trial(strcat('EEG/',fn(i).name));
+end
+%create configuration files
+parfor i = 1:length(fn)
+        cfg{i} = ft_definetrial(cfg{i});
+end
+%load all data
+d = [];
+parfor i = 1:length(fn)
+	d{i} = ft_preprocessing(cfg{i});                                                          
+end
+%get trialnumbers which exceed threshhold
 
 fn = dir('EEG/*.vhdr')
 
