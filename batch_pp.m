@@ -1,6 +1,6 @@
 %create processingpool
 workers = 10
-pilot = parpool(workers,'IdleTimeout',5);
+pilot = parpool(workers,'IdleTimeout',10);
 % preprocessing -> load data filter and creat eog channels
 %load all filesnames
 fn = dir('EEG/*.vhdr')
@@ -16,12 +16,13 @@ end
 %load all data
 fn = dir('EEG/*cfg.mat')
 parfor i = 1:length(fn)
-	cfg = load(fn(1).name);
+	cfg = load(fn(i).name);
 	d = ft_preprocessing(cfg.d);
 	d = extract_eog(d);
-	d = get_blink_trial(d);
+	d = get_blink_trial(cfg.d.trl,d);
+	d.cfg = '';
 	output = strcat(cfg.d.headerfile(1:11),'_preproc');
-	write_file(output,d);
+	write_data(output,d);
 end
 %get trialnumbers which exceed threshhold
 
