@@ -1,20 +1,27 @@
-
+%create processingpool
+workers = 10
+pilot = parpool(workers,'IdleTimeout',5);
 % preprocessing -> load data filter and creat eog channels
 %load all filesnames
 fn = dir('EEG/*.vhdr')
 %prepare configuration files
-cfg = [];
-for i =1:length(fn)
-        cfg{i} = define_trial(strcat('EEG/',fn(i).name));
+parfor i =1:length(fn)
+        cfg = define_trial(strcat('EEG/',fn(i).name));
+        cfg = ft_definetrial(cfg);
+	output = strcat('EEG/',fn(i).name(1:7),'_cfg');
+	write_file(output,cfg);
 end
-%create configuration files
-parfor i = 1:length(fn)
-        cfg{i} = ft_definetrial(cfg{i});
-end
+
+
 %load all data
-d = [];
+fn = dir('EEG/*cfg.mat')
 parfor i = 1:length(fn)
-	d{i} = ft_preprocessing(cfg{i});                                                          
+	cfg = load(fn(1).name);
+	d = ft_preprocessing(cfg.d);
+	d = extract_eog(d);
+	d = get_blink_trial(d);
+	output = strcat(cfg.d.headerfile(1:11),'_preproc');
+	write_file(output,d);
 end
 %get trialnumbers which exceed threshhold
 
