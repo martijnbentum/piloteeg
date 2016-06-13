@@ -24,27 +24,14 @@ parfor i = 1:length(fn)
 	output = strcat(cfg.d.headerfile(1:11),'_preproc');
 	write_data(output,d);
 end
-%get trialnumbers which exceed threshhold
-
-fn = dir('EEG/*.vhdr')
-
-for i = 1 : length(fn)
-    data = load_filter_eog(fn(i).name)
-    data = get_blink_trial(data)
-    output = strcat(fn(i).name(1:5),'_preproc')
-    data.filename = output
-    data.input_file = fn(i).name
-    save(output,'data')
-end
-
 
 % ICA and correlate components with eog channels
 
-fn = dir('ppn*preproc.mat')
+fn = dir('EEG/*preproc.mat')
 
 for i = 1 : length(fn)
     load(fn(i).name)
-    data = ica_and_corr(data)
+    d = ica_and_corr(d)
     output = strcat(fn(i).name(1:5),'_ica')
     data.filename = output
     data.input_file = fn(i).name
@@ -90,30 +77,32 @@ save(output,'all_pp')
 
 %check frequencies the frequencies for the preproc data (test if the
 %lowpass filter worked
-trial_numbers = 36:72:1720;
+%trial_numbers = 36:72:1720;
 
-fn = dir('ppn*preproc.mat');
-periodograms = {1,length(fn)};
+fn = dir('EEG/*preproc.mat');
+
+%periodograms = {1,length(fn)};
 for i = 1 : length(fn)
     load(fn(i).name)
-    pp = [];fz_periodogram = {1,length(trial_numbers)}; cz_periodogram = {1,length(trial_numbers)};
-    for t = 1 : length(trial_numbers)
-        [freqs, periodogram] = check_frequencies(500,400,data.trial{trial_numbers(t)}(2,:)); %channel Fz
-        fz_periodogram{t} = periodogram;
-        [freqs, periodogram] = check_frequencies(500,400,data.trial{trial_numbers(t)}(20,:));%channel Cz
-        cz_periodogram{t} = periodogram;
-    end
-    pp.fz_periodogram = fz_periodogram;
-    pp.cz_periodogram = cz_periodogram;
-    pp.trials = trial_numbers;
-    pp.filename = data.filename;
-    pp.freqs = freqs;
-    pp.channel_names = {data.label{2} data.label{2}};
-    periodograms{i} = pp
-    endall
+%    pp = [];fz_periodogram = {1,length(trial_numbers)}; cz_periodogram = {1,length(trial_numbers)};
+%    for t = 1 : length(trial_numbers)
+%     [freqs, periodogram] = check_frequencies(1000,d.trial{trial_numbers(t)}(2,:)); %channel Fz
+ %       fz_periodogram{t} = periodogram;
+    [freqs, periodogram] = check_frequencies(1000,d.trial{trial_numbers(t)}(21,:));%channel Cz
+%o        cz_periodogram{t} = periodogram;
+    create_periodogram_plot(freqs,periodogram,'Cz',fn(i).name)
+end
+%    pp.fz_periodogram = fz_periodogram;
+%    pp.cz_periodogram = cz_periodogram;
+%    pp.trials = trial_numbers;
+%    pp.filename = data.filename;
+%    pp.freqs = freqs;
+%    pp.channel_names = {data.label{2} data.label{2}};
+%    periodograms{i} = pp
+%endall
 
-    output = 'all_pp_periodograms.mat'
-    save(output,'periodograms')
+%output = 'all_pp_periodograms.mat'
+%save(output,'periodograms')
 
     
 % create the periodograms for all pp for two channels    
