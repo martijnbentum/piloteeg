@@ -33,18 +33,18 @@ for i = 1 : length(fn)
     load(fn(i).name)
     d = ica_and_corr(d)
     output = strcat(fn(i).name(1:5),'_ica')
-    data.filename = output
-    data.input_file = fn(i).name
+    d.filename = output
+    d.input_file = fn(i).name
     save(output,'data')
 end
 
 % plot ICA with eog correlation values
 
-fn = dir('ppn*ica.mat')
+fn = dir('EEG/*ica.mat')
 
 for i = 1 : length(fn)
     load(fn(i).name)
-    create_ica_plot(data)
+    create_ica_plot(d)
 end
 
 %create a data structure that holds information of all pp
