@@ -25,6 +25,17 @@ parfor i = 1:length(fn)
 	write_data(output,d);
 end
 
+%pp info, ntrial nblinktrial perc badtrials preproc data
+fn = dir('EEG/*preproc.mat');
+fout = fopen('pp_bad_trial_info_preproc.txt','w');   
+for i = 1 : length(fn)
+    load(fn(i).name);
+    disp(fn(i).name);
+    [bt,nbt,nt,perc] = perc_bad_trials(d);
+    fprintf(fout,'%7s %4d %4d %4d\n',fn(1).name(1:7),nbt,nt,perc);  
+end
+fclose(fout);
+
 % ICA and correlate components with eog channels
 
 fn = dir('EEG/*preproc.mat')
@@ -49,8 +60,8 @@ end
 
 %create a data structure that holds information of all pp
 
-fn = dir('ppn*preproc.mat')
-fn_ica = dir('*ica.mat')
+fn = dir('EEG/*preproc.mat')
+fn_ica = dir('EEG/*ica.mat')
 all_pp = {};
 for i = 1 : length(fn)
     load(fn(i).name);
@@ -78,37 +89,16 @@ save(output,'all_pp')
 %check frequencies the frequencies for the preproc data (test if the
 %lowpass filter worked
 %trial_numbers = 36:72:1720;
-
+trial_number = 1000;
 fn = dir('EEG/*preproc.mat');
 
 %periodograms = {1,length(fn)};
 for i = 1 : length(fn)
-    load(fn(i).name)
-%    pp = [];fz_periodogram = {1,length(trial_numbers)}; cz_periodogram = {1,length(trial_numbers)};
-%    for t = 1 : length(trial_numbers)
-%     [freqs, periodogram] = check_frequencies(1000,d.trial{trial_numbers(t)}(2,:)); %channel Fz
- %       fz_periodogram{t} = periodogram;
-    [freqs, periodogram] = check_frequencies(1000,d.trial{trial_numbers(t)}(21,:));%channel Cz
-%o        cz_periodogram{t} = periodogram;
-    create_periodogram_plot(freqs,periodogram,'Cz',fn(i).name)
-end
-%    pp.fz_periodogram = fz_periodogram;
-%    pp.cz_periodogram = cz_periodogram;
-%    pp.trials = trial_numbers;
-%    pp.filename = data.filename;
-%    pp.freqs = freqs;
-%    pp.channel_names = {data.label{2} data.label{2}};
-%    periodograms{i} = pp
-%endall
-
-%output = 'all_pp_periodograms.mat'
-%save(output,'periodograms')
-
-    
-% create the periodograms for all pp for two channels    
-load('all_pp_periodograms')
-for i = 1 : length(periodograms)
-    create_periodogram_plots(periodograms{i})
+    disp(fn(i).name)
+    disp(i)
+    load(fn(i).name);
+    [freqs, periodogram] = check_frequencies(1000,d.trial{trial_number}(21,:));%channel Cz
+    create_periodogram_plot(freqs,periodogram,'Cz',fn(i).name(1:7));
 end
 
 %-------------------------

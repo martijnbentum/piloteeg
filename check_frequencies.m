@@ -7,7 +7,7 @@ if mod(N,2) == 1%make sure n is of even number of samples lenth
 end
 
 fftoutnorm = fft(sig)/N;
-n_pos_freq = N/2+1 
+n_pos_freq = N/2+1; 
 fft_onpf = fftoutnorm(1:n_pos_freq);
 periodogram = fft_onpf.*conj(fft_onpf);
 Nyq = Sr/2;

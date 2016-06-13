@@ -8,9 +8,9 @@ f = freqs;
 set(gcf,'Visible','off');
 
 
-plot(f,pp.fz_periodogram{i});
+plot(freqs,periodogram);
 ylim([0 100])
 xlim([0 100])
-title(['FZ ',pp.filename(1:5),' ',num2str(pp.trials(i))])
-print('-dpng', strcat('PLOTS/',pp,'_periodogram_',ch))
+title([ch,' ',pp])
+print('-dpng', strcat('PLOTS/',pp,'_periodogram_',ch,'.png'))
 
