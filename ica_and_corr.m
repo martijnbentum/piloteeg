@@ -1,13 +1,13 @@
-function output = ica_and_corr(pp)
+function output = ica_and_corr(d)
 %questions
 
-eogv=ft_selectdata(pp, 'channel', {'eogv'});
-eogh=ft_selectdata(pp, 'channel', {'eogh'});
+eogv=ft_selectdata(d, 'channel', {'eogv'});
+eogh=ft_selectdata(d, 'channel', {'eogh'});
 
 %ICA  
 cfg = [];
-cfg.channel = {'all','-eogv','-eogh','-RM','-REF_leftmastoid'}%[1:27] %EXCLUDE EOG and reference channels
-comp = ft_componentanalysis(cfg,pp);
+cfg.channel = {'all','-eogv','-eogh','-RM','-REF_LM','-Fp1'}%[1:27] %EXCLUDE EOG and reference channels
+comp = ft_componentanalysis(cfg,d);
 
 [corr_eogv, corr_eogh] = correlate_comp_eog(comp, eogv, eogh);
 
