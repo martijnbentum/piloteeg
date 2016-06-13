@@ -4,14 +4,14 @@ function output = exctract_eog(d)
 
 % EOGV channel VERTICAL
 cfg              = [];
-cfg.channel      = {'VEOG' 'FP1'};
+cfg.channel      = {'VEOG' 'Fp1'};
 cfg.reref        = 'yes';
 cfg.implicitref  = [];
 cfg.refchannel   = {'VEOG'};
 eogv             = ft_preprocessing(cfg, d);
 %only keep one channel, and rename to eogv
 cfg              = [];
-cfg.channel      = 'FP1';
+cfg.channel      = 'Fp1';
 eogv             = ft_selectdata(cfg, eogv); 
 eogv.label       = {'eogv'};
 
