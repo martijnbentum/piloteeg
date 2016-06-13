@@ -15,8 +15,10 @@ end
 cfg = [];
 cfg.component = [1:len];       % specify the component(s) that should be plotted
 cfg.layout    = 'easycapM23.mat'%'EEG1010.lay'; % specify the layout file that should be used for plotting
-cfg.comment = 'cells' % !!!!!!!!! -> modified fieltrip file
-cfg.commentpos = 'leftbottom'
+cfg.comments = 'cells' % !!!!!!!!! -> modified fieltrip file,normal fieldname is comment: fieldtrip-2016xxx/private/topoplot_common.m line 673 674, added the following if statement
+%elseif strcmp(cfg.comments, 'cells')  cfg.comment = cfg.commentcell(cfg.component);
+cfg.commentpos = 'leftbottom;%change topoplot_common to -0.6 -0.9 for better position, copy of
+%topoplot_common can be found in piloteeg directory
 cfg.commentcell = com_cell
 set(gcf,'Visible','off');
 
