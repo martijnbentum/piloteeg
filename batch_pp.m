@@ -25,6 +25,14 @@ parfor i = 1:length(fn)
 	write_data(output,d);
 end
 
+%write files list to files
+fn = dir('EEG/*preproc.mat');                                               
+fout = fopen('preproc_file_list.txt','w');
+for i = 1:length(fn)
+	    fprintf(fout,'%20s',fn(i).name);
+    end
+fclose(fout);
+
 %pp info, ntrial nblinktrial perc badtrials preproc data
 fn = dir('EEG/*preproc.mat');
 fout = fopen('pp_bad_trial_info_preproc.txt','w');   
@@ -32,9 +40,10 @@ for i = 1 : length(fn)
     load(fn(i).name);
     disp(fn(i).name);
     [bt,nbt,nt,perc] = perc_bad_trials(d);
-    fprintf(fout,'%7s %4d %4d %4d\n',fn(1).name(1:7),nbt,nt,perc);  
+    fprintf(fout,'%7s %4d %4d %4d\n',fn(i).name(1:7),nbt,nt,perc);  
 end
 fclose(fout);
+%exit
 
 % ICA and correlate components with eog channels
 
@@ -43,10 +52,11 @@ fn = dir('EEG/*preproc.mat')
 for i = 1 : length(fn)
     load(fn(i).name)
     d = ica_and_corr(d)
-    output = strcat(fn(i).name(1:5),'_ica')
+    output = strcat(fn(i).name(1:7),'_ica')
     d.filename = output
     d.input_file = fn(i).name
-    save(output,'data')
+    write_data(output,d)
+
 end
 
 % plot ICA with eog correlation values
