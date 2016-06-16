@@ -6,4 +6,4 @@ nt = length(d.trial);
 bt = [d.eogh_bad_trials d.eogv_bad_trials];%concatenate all bad trials
 bt = unique(bt);
 nbt = length(bt);
-perc = round((3260/5622) *100);
+perc = round((nbt/nt) *100);
