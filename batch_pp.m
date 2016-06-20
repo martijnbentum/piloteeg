@@ -115,19 +115,12 @@ end
 
 %Add the components that need to be removed tot he all_pp -> all_pp_new
 
-load all_pp
-all_pp_new = bad_comp_all_pp(all_pp,'remove_components.txt')
-output = 'all_pp_new.mat'
-save(output,'all_pp_new')%adds the components that need to be removed
-
-%--------------------------
-
+all_pp = bad_comp_all_pp();%creates a datastructure with file id and to be removed components
 %Recompose data without the bad components
-
-load all_pp_new
-for i = 1 : length(all_pp_new)
-    data = extract_components(all_pp_new{i}) %recomposes the data withou the bad components
-    save(data.filename,'data')
+parfor i = 1 : length(all_pp)
+   disp(all_pp(i).file_id)
+    d = extract_components(all_pp(i)) %recomposes the data withou the bad components
+    write_data(d.filename,'d')
 end
 
 %--------------------------
