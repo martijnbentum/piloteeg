@@ -67,33 +67,6 @@ for i = 1 : length(fn)
     load(fn(i).name)
     create_ica_plot(d)
 end
-
-%create a data structure that holds information of all pp
-
-fn = dir('EEG/*preproc.mat')
-fn_ica = dir('EEG/*ica.mat')
-all_pp = {};
-for i = 1 : length(fn)
-    load(fn(i).name);
-    pp = [];
-    pp.filename_preproc = data.filename;
-    pp.eogv_bad_trials = data.eogv_bad_trials
-    pp.eogh_bad_trials = data.eogh_bad_trials
-    pp.cfg_preproc = data.cfg
-    load(fn_ica(i).name);
-    pp.filename_ica = data.filename;
-    pp.cor_eogv = data.cor_eogv;
-    pp.cor_eogh = data.cor_eogh;
-    [c index] = max(data.cor_eogv);
-    pp.highest_v = [c index]
-    [c index] = max(data.cor_eogh);
-    pp.highest_h = [c index]
-    pp.cfg_ica = data.cfg;
-    all_pp{i} = pp
-end
-output = 'all_pp.mat'
-save(output,'all_pp')
-
 %-----------------------
 
 %check frequencies the frequencies for the preproc data (test if the
@@ -117,54 +90,41 @@ end
 
 all_pp = bad_comp_all_pp();%creates a datastructure with file id and to be removed components
 %Recompose data without the bad components
-parfor i = 1 : length(all_pp)
+for i =  s : length(all_pp)
    disp(all_pp(i).file_id)
     d = extract_components(all_pp(i)) %recomposes the data withou the bad components
-    write_data(d.filename,'d')
+    write_data(d.filename,d)
 end
 
 %--------------------------
 
 %create plots (of blink trials, that compare ica-cleaned-data with the preproc-data
 
-load all_pp_new
-for i = 1 : length(all_pp_new)
-    plot_clean_preproc(all_pp_new{i}) %plots 10 blink trials
+all_pp = bad_comp_all_pp();%creates a datastructure with file id and to be removed components
+for i = 1 : length(all_pp);
+    plot_clean_preproc(all_pp(i)) %plots 10 blink trials
 end
 
 %---------------------------
 
-%remove all trials that exceed threshold
+%find all trials that exceed threshold and save it to the cfg file, this can be used lateron to be removed before other steps, use this code:
+%cfg.trials = setdiff(1:length(d.trial),preproc_cfg.d.rejected_trials);
+%d        = ft_selectdata(cfg, d); 
 
-fn = dir('ppn*clean.mat');
+fn = dir('*_clean.mat');
 for i = 1 : length(fn)
     load(fn(i).name)
-    data = check_threshold(data) %removes all trials that exceeds -75 75 mu volts
-    save(data.filename,'data')
+    cfg = check_threshold(d) %removes all trials that exceeds -75 75 mu volts
+    output = strcat(fn(i).name(1:7),'_cfg');
+    write_file(output,cfg)
 end
 
 %---------------------------
+%important note, I did not make clean_threshold files, to save on disk space
 
-% show all removed trials for all pp
+%it is thus very important to remove the rejected trials each time i load the 
+%clean files, i will write a function called reject_files to do this.
 
-load all_pp_new
-removed_trials = {1,length(all_pp_new)};
-for i = 1 : length(all_pp_new)
-    %p = []
-    load(strcat(all_pp_new{i}.filename_preproc(1:5),'_clean_threshold.mat'))
-    all_pp_new{i}.removed_trial_count = count_removed_trials(data)
-    all_pp_new{i}.rejected_trials = data.rejected_trials
-    removed_trials{i}.p_name = all_pp_new{i}.filename_preproc(1:5)
-    removed_trials{i}.all_count = all_pp_new{i}.removed_trial_count.all_count
-    removed_trials{i}.all_proportion = all_pp_new{i}.removed_trial_count.all_proportion
-    removed_trials{i}.conditions = all_pp_new{i}.removed_trial_count.conditions
-
-    save('removed_trials','removed_trials')
-end
-%plot the removed trials for all participants
-for i = 1: length(removed_trials)
-    removed_trials{i}
-end
 %-------------------------  
 
 %create averages for all conditions and create difference waves, put them
