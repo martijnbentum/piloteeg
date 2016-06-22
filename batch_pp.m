@@ -126,6 +126,13 @@ end
 %clean files, i will write a function called reject_files to do this.
 
 %-------------------------  
+pp = make_pp_groups();
+save('pp_groups.mat','pp')
+pp = select_trials(pp);
+save('pp_condition_trials.mat','pp')
+pp = create_average(pp);
+save('pp_condition_averages.mat','pp')
+
 
 %create averages for all conditions and create difference waves, put them
 %in 1 data structure
