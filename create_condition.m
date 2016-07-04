@@ -1,9 +1,11 @@
 function cfg= create_condition(cfg,d)
-%select a subset of trials based on conditions specified in cfg
+%select a subset of trials based on conditions specified in cfg, it returns files to be removed to create the condition. So far only works on open / closed class
 
 if ~isfield(cfg,'reduced'), cfg.reduced = 1; end %unreduced is default (for testing, exploratory)
 if ~isfield(cfg,'day_id'), cfg.day_id = 1; end %day 1 is default (for testing, exploratory)
-if ~isfield(cfg,'closed_class'), cfg.closed_class = 1; end %open class words is default (for testing, exploratory)
+
+%this is a private field and should alway be 0, which stands for closed class word
+cfg.closed_class = 0;  %1 = open class, 0 = closed class create a field containing trials with closed class words
 
 if cfg.reduced ~= d.trialinfo(1,4)
 	error('This participant belongs to reduced group, if you want to select those you should specify in the cfg.reduced = 2 because unreduced is default')
@@ -18,16 +20,37 @@ else, disp('participant belongs to reduced group'); end
 if cfg.day_id == 1, disp('recording day 1');
 else, disp('recording day 3'); end
 
-remove_trials = [];
+closed_class_trials = [];
+open_class_trials = [];
+lower_q = [];
+higher_q = [];
+pseudo = [] ;
 for row = 1: length(d.trialinfo)
 %store indices of each trial that do not meet a condition	
-	if cfg.closed_class ~= d.trialinfo(row,8)
-		remove_trials = [remove_trials row]; %add index to remove trials
+	if cfg.closed_class == d.trialinfo(row,8)%store trial n with closed class words 
+		closed_class_trials = [closed_class_trials row]; %add index of a closed class
+	else
+		open_class_trials = [open_class_trials row]; % add index of a open class trl
 	end
+	if isfield(cfg,'lower_q') && cfg.lower_q > d.trialinfo(row,9)
+		lower_q = [lower_q row]; %add index of a trial that belong to lower_quartile logprob
+	end
+	if isfield(cfg,'higher_q') && cfg.higher_q < d.trialinfo(row,9) && d.trialinfo(row,9) < 0 && d.trialinfo(row,8) ~= cfg.closed_class
+		higher_q = [higher_q row]; %add index of a trial that belong to higher_quartile logprob
+	end
+	if d.trialinfo(row,9) > 0
+		pseudo = [pseudo row];
+	end
+
 end
 
-cfg.remove_trials = remove_trials;
+cfg.closed_class_trials = closed_class_trials;
+cfg.open_class_trials = open_class_trials;
+cfg.pseudoword_trials = pseudo;
+if isfield(cfg,'lower_q'), cfg.lower_q_trials = lower_q; end
+if isfield(cfg,'higher_q'), cfg.higher_q_trials = higher_q; end
 
+	
 
 
 %{
