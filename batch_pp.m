@@ -1,7 +1,7 @@
 %create processingpool
-workers = 10
+workers =5 
 pilot = parpool(workers,'IdleTimeout',10);
-% preprocessing -> load data filter and creat eog channels
+% preprocessing -> load data filter and create eog channels
 %load all filesnames
 fn = dir('EEG/*.vhdr')
 %prepare configuration files
@@ -111,7 +111,7 @@ end
 %cfg.trials = setdiff(1:length(d.trial),preproc_cfg.d.rejected_trials);
 %d        = ft_selectdata(cfg, d); 
 
-fn = dir('*_clean.mat');
+fn = dir('EEG/*_clean.mat');
 for i = 1 : length(fn)
     load(fn(i).name)
     cfg = check_threshold(d) %removes all trials that exceeds -75 75 mu volts
@@ -124,15 +124,89 @@ end
 
 %it is thus very important to remove the rejected trials each time i load the 
 %clean files, i will write a function called reject_files to do this.
-
+%
 %-------------------------  
+%i need to add the logprob values to the trialinfo in the d files, if logprob =
+% 999.99 this means that the word was not part of the vocabulary, this means that
+% the word is most probably one of the pseudowords in the stories, these words
+% should be removed from the analysis
+fn = dir('EEG/*_clean.mat');
+for i = 2 : length(fn)
+	load(fn(i).name)
+	disp(fn(i).name)
+	ti = add_logprob(d);
+	d.old_trialinfo = d.trialinfo;
+	d.trialinfo = ti;
+	write_data(strcat('EEG/',d.filename),d)
+end
+%--------------------------
 pp = make_pp_groups();
 save('pp_groups.mat','pp')
+load('pp_groups.mat')
 pp = select_trials(pp);
 save('pp_condition_trials.mat','pp')
-pp = create_average(pp);
+load('pp_condition_trials.mat')
+pp = create_averages(pp);
 save('pp_condition_averages.mat','pp')
+load('pp_condition_averages.mat')
 
+pp = create_grandaverages(pp,'day1','unreduced','open_class_avg');
+pp = create_grandaverages(pp,'day1','unreduced','lower_q_avg');
+pp = create_grandaverages(pp,'day1','unreduced','higher_q_avg');
+
+pp = create_grandaverages(pp,'day3','unreduced','open_class_avg');
+pp = create_grandaverages(pp,'day3','unreduced','lower_q_avg');
+pp = create_grandaverages(pp,'day3','unreduced','higher_q_avg');
+
+cfg = []
+cfg.demean='yes'   
+cfg.baselinewindow=[-0.150 0]
+
+
+oc1 =pp.day1.unreduced.grand_open_class_avg       
+lq1 =pp.day1.unreduced.grand_lower_q_avg 
+hq1 =pp.day1.unreduced.grand_higher_q_avg  
+
+ocb1 = ft_preprocessing(cfg,oc1)                                                 
+lqb1 = ft_preprocessing(cfg,lq1)                                
+hqb1 = ft_preprocessing(cfg,hq1)                                                            
+
+oc3 =pp.day3.unreduced.grand_open_class_avg       
+lq3 =pp.day3.unreduced.grand_lower_q_avg 
+hq3 =pp.day3.unreduced.grand_higher_q_avg  
+
+
+ocb3 = ft_preprocessing(cfg,oc3)
+lqb3 = ft_preprocessing(cfg,lq3)
+hqb3 = ft_preprocessing(cfg,hq3)                           
+
+hold off
+plot(lq.time,lqb1.avg(19,:))  
+hold on
+plot(lq.time,hqb1.avg(19,:))  
+plot(lq.time,ocb1.avg(19,:))                                                              
+legend('lq','hq','oc1')
+
+hold off
+plot(lq.time,lqb3.avg(19,:))  
+hold on
+plot(lq.time,hqb3.avg(19,:))  
+plot(lq.time,ocb3.avg(19,:))  
+legend('lq','hq','oc3')
+
+gavg_lq = ft_timelockgrandaverage([],lqb1,lqb3)    
+gavg_hq = ft_timelockgrandaverage([],hqb1,hqb3)
+gavg_oc = ft_timelockgrandaverage([],ocb1,ocb3)    
+
+hold off
+plot(lq.time,gavg_lq.avg(19,:))  
+hold on
+plot(lq.time,gavg_hq.avg(19,:))  
+plot(lq.time,gavg_oc.avg(19,:))  
+legend('lq','hq','oc 1 3')
+
+save('pp_grand_averages.mat','pp')
+load('pp_grand_averages.mat','pp')
 
 %create averages for all conditions and create difference waves, put them
 %in 1 data structure
