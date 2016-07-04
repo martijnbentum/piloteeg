@@ -3,5 +3,5 @@ function d = remove_trials(all_trl_remove,d)
 %preproc_cfg file
 
 cfg = [];
-cfg.trials = setdiff(1:length(d.trial),all_remove_trls);
+cfg.trials = setdiff(1:length(d.trial),all_trl_remove);
 d        = ft_selectdata(cfg, d); 
