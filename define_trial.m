@@ -1,7 +1,7 @@
 function cfg = define_trial(pp_filename)
 cfg = [];
 %define the trials
-cfg.trialfun                = 'trialfun_pilot';
+cfg.trialfun                = 'trialfun_stories';%pilot';
 cfg.trialdef.prestim        = .2;
 cfg.trialdef.poststim       = 1;
 cfg.trialdef.eventtype      = 'Stimulus';
