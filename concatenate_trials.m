@@ -1,4 +1,9 @@
 function output = concatenate_trials(input)
+%concatenates each trial in the time dimension
+%input is a fieldtrip data structure, e.g. from ft_preprocessing
+%example
+%input:20 trials, 1000 samples per trial(columns), 32 channels (rows)
+%output 32 X 20.000 matrix
 
 Ntrials = length(input.trial);
 
