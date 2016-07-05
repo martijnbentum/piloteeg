@@ -76,121 +76,25 @@ for i=1:numel(event)
 		temp.begin_trl = temp.sample - temp.pretrig;
 		temp.end_trl = temp.sample + temp.posttrig;
 		selection = [selection temp];
-		trl = [trl; [temp.begin_trl temp.end_trl -1*temp.pretrig temp.pp_id temp.day_id temp.story_id temp.reduced temp.word_id temp.duration_word temp.tag temp.closed_class]];
+		%the word based trial definition is not used in this script, use trialfun_pilot instead
+		%trl = [trl; [temp.begin_trl temp.end_trl -1*temp.pretrig temp.pp_id temp.day_id temp.story_id temp.reduced temp.word_id temp.duration_word temp.tag temp.closed_class]];
+		
 		if old_story_id == 0 % if this is the first story initialise story id and begin_trl
-   		  old_story_id = story_id;		
-	  		 story_begin_trl = temp.begin_trl
+   		  old_story_id = temp.story_id;		
+	  		 story_begin_trl = temp.begin_trl;
 		end
 
 		if old_story_id ~= temp.story_id %if the story id does not match a new story has started, save the begin and end of the story
 			  story_trl = [story_trl; [story_begin_trl last_end_trl -1*temp.pretrig old_story_id]];
-			  old_story_id = temp.story_id;
+			  old_story_id = temp.story_id;%the new story has now started and we have to wait until this one ends
+			  story_begin_trl = temp.begin_trl;%store the start of this new story
 		end
-		last_end_trl = temp.end_trl;
+		last_end_trl = temp.end_trl;%should store the end of each trial, because we only know that a new story hasstarted at the first word of that new story.
 	end
 end
+%return the variable with all begin and end samples of the stories
+story_trl = [story_trl; [story_begin_trl last_end_trl -1*temp.pretrig old_story_id]];
 event(1).selection =selection;
-%%% for the following, the trials do not depend on the events in the data
-%if isfield(cfg.trialdef, 'triallength')
-%  if isinf(cfg.trialdef.triallength)
-%    % make one long trial with the complete continuous data in it
-%    trl = [1 hdr.nSamples*hdr.nTrials 0];
-%  elseif isinf(cfg.trialdef.ntrials)
-%    % cut the continous data into as many segments as possible
-%    nsamples = round(cfg.trialdef.triallength*hdr.Fs);
-%    trlbeg   = 1:nsamples:(hdr.nSamples*hdr.nTrials - nsamples + 1);
-%    trlend   = trlbeg + nsamples - 1;
-%    offset   = zeros(size(trlbeg));
-%    trl = [trlbeg(:) trlend(:) offset(:)];
-%  else
-%    % make the pre-specified number of trials
-%    nsamples = round(cfg.trialdef.triallength*hdr.Fs);
-%    trlbeg   = (0:(cfg.trialdef.ntrials-1))*nsamples + 1;
-%    trlend   = trlbeg + nsamples - 1;
-%    offset   = zeros(size(trlbeg));
-%    trl = [trlbeg(:) trlend(:) offset(:)];
-%  end
-%  return
-%end
-
-%trl = [33416       34615        -200];
-val = [];
-
-%% start by selecting all events
-%sel = true(1, length(event)); % this should be a row vector
-%
-%% select all events of the specified type
-%if isfield(cfg.trialdef, 'eventtype') && ~isempty(cfg.trialdef.eventtype)
-%  for i=1:numel(event)
-%    sel(i) = sel(i) && ismatch(event(i).type, cfg.trialdef.eventtype);
-%  end
-%elseif ~isfield(cfg.trialdef, 'eventtype') || isempty(cfg.trialdef.eventtype)
-%  % search for trial events
-%  for i=1:numel(event)
-%    sel(i) = sel(i) && ismatch(event(i).type, 'trial');
-%  end
-%end
-%
-%% select all events with the specified value
-%if isfield(cfg.trialdef, 'eventvalue') && ~isempty(cfg.trialdef.eventvalue)
-%  for i=1:numel(event)
-%    sel(i) = sel(i) && ismatch(event(i).value(1), cfg.trialdef.eventvalue);
-%  end
-%end
-%
-%% convert from boolean vector into a list of indices
-%sel = find(sel);
-%
-%
-%for i=sel
-%  % catch empty fields in the event table and interpret them meaningfully
-%  if isempty(event(i).offset)
-%    % time axis has no offset relative to the event
-%    event(i).offset = 0;
-%  end
-%  if isempty(event(i).duration)
-%    % the event does not specify a duration
-%    event(i).duration = 0;
-%  end
-%  % determine where the trial starts with respect to the event
-%  if ~isfield(cfg.trialdef, 'prestim')
-%    trloff = event(i).offset;
-%    trlbeg = event(i).sample;
-%  else
-%    % override the offset of the event
-%    trloff = round(-cfg.trialdef.prestim*hdr.Fs);
-%    % also shift the begin sample with the specified amount
-%    trlbeg = event(i).sample + trloff;
-%  end
-%  % determine the number of samples that has to be read (excluding the begin sample)
-%  if ~isfield(cfg.trialdef, 'poststim')
-%    trldur = max(event(i).duration - 1, 0);
-%  else
-%    % this will not work if prestim was not defined, the code will then crash
-%    trldur = round((cfg.trialdef.poststim+cfg.trialdef.prestim)*hdr.Fs) - 1;
-%  end
-%  trlend = trlbeg + trldur;
-%  % add the beginsample, endsample and offset of this trial to the list
-%  % if all samples are in the dataset
-%  if trlbeg>0 && trlend<=hdr.nSamples*hdr.nTrials,
-%    trl = [trl; [trlbeg trlend trloff]];
-%    if isnumeric(event(i).value),
-%      val = [val; event(i).value];
-%    elseif ischar(event(i).value) && numel(event(i).value)>1 && (event(i).value(1)=='S'|| event(i).value(1)=='R')
-%      % on brainvision these are called 'S  1' for stimuli or 'R  1' for responses
-%      val = [val; str2double(event(i).value(2:end))];
-%    else
-%      val = [val; nan];
-%    end
-%  end
-%end
-%
-%% append the vector with values
-%if ~isempty(val) && ~all(isnan(val)) && size(trl,1)==size(val,1)
-%  trl = [trl val];
-%end
-%
-%hdr
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SUBFUNCTION returns true if x is a member of array y, regardless of the class of x and y
