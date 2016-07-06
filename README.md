@@ -14,4 +14,10 @@ eye artifacts
 there is a function for detecting eye artifacts, could be handy for checking the succes of the ica
 should check whether componts really remove eye artifacts, especially horizontal eye artifacts by plotting time course of bad trials of the components
 
+#ft_layoutplot.m FIX
+added some code: on line 92: hasdata = exist('data', 'var'); (from github current master) otherwise throws error:
+##Undefined function or variable 'hasdata'.
+##
+##Error in ft_layoutplot (line 110)
+##  if hasdata
 

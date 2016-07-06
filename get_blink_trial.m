@@ -15,6 +15,8 @@ cfg.trl = trl;
 cfg.continuous = 'no';
 cfg.artfctdef.threshold.min       = -75;
 cfg.artfctdef.threshold.max       = 75;
+cfg.artfctdef.threshold.bpfilter = 'no';
+
 
 [config, artifact] = ft_artifact_threshold(cfg,eogv);
 data.eogv_bad_trials = sample2trln(artifact,data.sampleinfo);
