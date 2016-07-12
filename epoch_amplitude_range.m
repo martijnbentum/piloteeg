@@ -1,4 +1,5 @@
 function epoch_amp = epoch_amplitude_range(d)
+disp('calculating epoch_amplitude_range')
 
 amp_range = [];
 for i = 1 : length(d.trial)
@@ -17,6 +18,6 @@ epoch_amp.artifact_trial = indices;
 artifact_sampleinfo = [];
 for i =1 : length(indices)
 	epoch_amp.artifact_sampleinfo = d.sampleinfo(indices(i),:)
-	artifact_sampleinfo = [artifact_sampleinfo d.sampleinfo(indices(i),:)];
+	artifact_sampleinfo = [artifact_sampleinfo; d.sampleinfo(indices(i),:)];
 end
 epoch_amp.artifact_sampleinfo = artifact_sampleinfo;

@@ -15,6 +15,6 @@ epoch_var.artifact_trial = indices;
 
 artifact_sampleinfo = [];
 for i =1 : length(indices)
-	artifact_sampleinfo = [artifact_sampleinfo d.sampleinfo(indices(i),:)];
+	artifact_sampleinfo = [artifact_sampleinfo; d.sampleinfo(indices(i),:)];
 end
 epoch_var.artifact_sampleinfo = artifact_sampleinfo;
