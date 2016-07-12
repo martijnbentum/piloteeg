@@ -19,15 +19,25 @@ parfor i = 1:length(fn)
 	cfg = load(fn(i).name);
 	d = ft_preprocessing(cfg.d);
 	d = extract_eog(d);
-	%collect channel and epoch statistics (epochs are defined shorter 1s, because trials are long)
-	garbage = garbage_collection(d);%garbage contains info aboutgchannels epoch that are questionable
-	garbage_out = strcat(cfg.d.headerfile(1:11),'_garbage');
-	write_file(garbage_out,garbage);
 	%store data file
 	d = rmfield(d,'cfg');
 	output = strcat(cfg.d.headerfile(1:11),'_preprocstories');
 	d.filename = output
 	write_data(output,d);
+end
+
+%load all data
+fn = dir('EEG/*preprocstories.mat')
+parfor i = 1:length(fn)	
+	%collect channel and epoch statistics (epochs are defined shorter 1s, because trials are long)
+	%select subset of channels, eog channels are defined in garbage_collection, could be givein cfg.eog_channel
+	d = load(fn(i).name);
+	d = d.d;
+	cfg = [];
+	cfg.channel = {'all'};
+	garbage = garbage_collection(cfg,d);%garbage contains info aboutgchannels epoch that are questionable
+	garbage_out = strcat(d.filename(1:11),'_garbage');
+	write_file(garbage_out,garbage);	
 end
 
 %write files list to files
@@ -40,17 +50,22 @@ fclose(fout);
 
 %pp info, ntrial nblinktrial perc badtrials preproc data
 fn = dir('EEG/*garbage.mat');
-fout = fopen('pp_bad_trial_info_preprocstories.txt','w');   
+fout = fopen('pp_bad_trial_info_preprocstories_ch_ep.txt','w');   
+ftrial_reject = fopen('pp_epoch_bad_trial.txt','w');
 for i = 1 : length(fn)
     load(fn(i).name);
     disp(fn(i).name);
 	 blinks = d.blinks;
     [bt,nbt,nt,perc] = perc_blink_trials(blinks);
-	 channel = d.channel;
-	 [n_bad_var_ch,n_bad_cor_ch,n_bad_ch,bad_ch] = bad_channels(channel);
+	 [n_bad_var_ch,n_bad_cor_ch,n_bad_ch,bad_ch] = bad_channels(d);
+	 %pp_id n_blinktrial ntrials_chunks per_blink_trials n_var_bad_channels n_cor_bad_channels bad_channels
     fprintf(fout,'%7s %4d %4d %2d %2d %2d %2d %s\n',fn(i).name(1:7),nbt,nt,perc,n_bad_var_ch,n_bad_cor_ch,n_bad_ch,bad_ch);  
+	 [n_bad_var_ep,n_bad_dev_ep,n_bad_amp_ep,n_bad_ep,bad_ep,perc_bad_ep,ntrials] = bad_epoch(d);
+    fprintf(fout,'%7s %4d %4d %4d %4d %2d %2d\n',fn(i).name(1:7),n_bad_var_ep,n_bad_dev_ep,n_bad_amp_ep,n_bad_ep,ntrials,perc_bad_ep);
+    fprintf(ftrial_reject,'%7s %s\n',fn(i).name(1:7),bad_ep);
 end
 fclose(fout);
+fclose(ftrial_reject);
 %exit
 
 % ICA and correlate components with eog channels
