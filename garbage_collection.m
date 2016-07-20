@@ -7,18 +7,30 @@ if ~isfield(cfg,'eog_channel'), cfg.eog_channel = {'all','-eogv','-eogh','-RM','
 if ~isfield(cfg,'check_blinks'), cfg.check_blinks = 'yes';end%default to check for blinks
 if ~isfield(cfg,'check_channel'), cfg.check_channel = 'yes';end %default to check channels (var and correlation) 
 if ~isfield(cfg,'check_epoch'),cfg.check_epoch = 'yes'; end%default to check epoch (deviance variance amp range)
-
+if ~isfield(cfg,'length'),cfg.length = 1; end% length of epoch, default is 1 second
 
 %create variable that collects all garbage statistics
-garbage = [];
-garbage.cfg = cfg;
+if ~isfield(cfg,'garbage')
+	garbage = [];
+	garbage.cfg = cfg;
+else
+	garbage = cfg.garbage
+	cfg = rmfield(cfg,'garbage')
+	cfg.cfg_old = garbage.cfg
+	garbage.cfg = cfg
+end
 
 %EPOCH CHECK
 
-%devide all trials into 1 second streches for epoch statistic calculation 
-c = [];
-c.length = 1; %seconds
-c.overlap = 0;% no overlap
+if ~isfield(cfg,'c')
+	%default is to devide all trials into 1 second streches for blink detection
+	c = [];
+	c.length = cfg.length; %seconds
+	c.overlap = 0;% no overlap
+else
+%alternatively a cfg structure can be given in cfg.c for redefine trial
+	c = cfg.c;
+end
 snips = ft_redefinetrial(c,d);
 garbage.epoch_trial_select = c;
 garbage.epoch_trl = [snips.sampleinfo zeros(size(snips.sampleinfo,1),1)];
