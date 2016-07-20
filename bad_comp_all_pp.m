@@ -2,7 +2,7 @@ function output = bad_comp_all_pp()
 
 %function assumes and skips the header
 %read in components to be removed
-z = fopen('components.txt');
+z = fopen('components_no.txt');
 temp = textscan(z,'%s','Delimiter','\n');
 fclose(z);
 temp{1};

@@ -9,4 +9,4 @@ bad_ep = unique([garbage.epoch_var.artifact_trial garbage.epoch_dev.artifact_tri
 n_bad_ep = length(bad_ep);
 ntrials = size(garbage.epoch_trl,1);
 perc_bad_ep = round((n_bad_ep/ntrials) *100);
-bad_ep = num2str(bad_ep(1,:),'%d ');
+bad_ep = num2str(bad_ep(1,:),'%d;');

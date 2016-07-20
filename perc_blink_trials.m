@@ -1,4 +1,4 @@
-function [bt,nbt,nt,perc] = perc_bad_trials(d)
+function [bt,nbt,nt,perc] = perc_blink_trials(d)
 %renamed from perc_bad_trials
 %returns bad trial numbers, number of bad trials, number of trials and percentage of bad trials
 %needs dataset d, made for preproc files

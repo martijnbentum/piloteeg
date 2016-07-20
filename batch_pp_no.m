@@ -1,5 +1,5 @@
 %create processingpool
-workers =10
+workers =15
 pilot = parpool(workers,'IdleTimeout',10);
 % preprocessing -> load data filter and create eog channels
 %load all filesnames
@@ -28,13 +28,22 @@ end
 
 %load all data
 fn = dir('EEG/*preprocstories.mat')
+%i create garbage files before, and i want to skip blink detection, so i will load old garbage files and run garbage collection without blink detection. I will set epoch time 200 ms, to get a more finegrained rejection
+fn_garbage = dir('EEG/*garbage.mat')
 parfor i = 1:length(fn)	
-	%collect channel and epoch statistics (epochs are defined shorter 1s, because trials are long)
-	%select subset of channels, eog channels are defined in garbage_collection, could be givein cfg.eog_channel
+	%collect channel and epoch statistics (epochs are defined shorter (e.g. 500ms), because trials are long)
+	%select subset of channels, eog channels are defined in garbage_collection, could be given in cfg.eog_channel
 	d = load(fn(i).name);
 	d = d.d;
 	cfg = [];
-	cfg.channel = {'all'};
+	%use old garbage files, turn of if you do not want to use the old files
+	%g = load(fn_garbage(i).name);
+	%cfg.garbage = g.d;
+	%---------------------------
+	cfg.check_blinks = 'yes' %(if i redefine epoch length, blinks need to be rechecked blinks are already part of the old garbage file, so i can skip this time step
+	cfg.channel = {'all'};%only exclude eog channels
+	cfg.length = 1% Iwill switch back to epoch of 1 s. With short epochs the changes of outliers are boosted, because small samples will show more extreme behavior. duration of epoch in seconds
+
 	garbage = garbage_collection(cfg,d);%garbage contains info aboutgchannels epoch that are questionable
 	garbage_out = strcat(d.filename(1:11),'_garbage');
 	write_file(garbage_out,garbage);	
@@ -62,20 +71,42 @@ for i = 1 : length(fn)
     fprintf(fout,'%7s %4d %4d %2d %2d %2d %2d %s\n',fn(i).name(1:7),nbt,nt,perc,n_bad_var_ch,n_bad_cor_ch,n_bad_ch,bad_ch);  
 	 [n_bad_var_ep,n_bad_dev_ep,n_bad_amp_ep,n_bad_ep,bad_ep,perc_bad_ep,ntrials] = bad_epoch(d);
     fprintf(fout,'%7s %4d %4d %4d %4d %2d %2d\n',fn(i).name(1:7),n_bad_var_ep,n_bad_dev_ep,n_bad_amp_ep,n_bad_ep,ntrials,perc_bad_ep);
-    fprintf(ftrial_reject,'%7s %s\n',fn(i).name(1:7),bad_ep);
+    fprintf(ftrial_reject,'%7s,%s\n',fn(i).name(1:7),bad_ep);
 end
 fclose(fout);
 fclose(ftrial_reject);
-%exit
+%---------------------------------------------------------
+
+%create reject files, by removing all bad epoch from data
+all_pp = bad_epoch_all_pp();%creates a datastructure with file id and to be removed epochs
+parfor i =  1 : length(all_pp)
+   disp(all_pp(i).file_id)
+    d = take_out_garbage_epoch(all_pp(i)) %recomposes the data withou the bad epoch
+    write_data(d.filename,d)
+end
+
+%create blink trial indices for each pp in the pre ica files
+fn = dir('EEG/*_reject.mat')
+for i = 5 : length(fn)
+	load(fn(i).name)
+	cfg = []
+	cfg.c = d.cfg_redefine
+	cfg.check_epoch = 'no'
+	cfg.check_channel = 'no'	
+	blinks = garbage_collection(cfg,d)
+	blinks_out = strcat(d.filename(1:7),'_rejectblink')
+	write_file(blinks_out,blinks)
+end
+
 
 % ICA and correlate components with eog channels
 
-fn = dir('EEG/*preproc.mat')
+fn = dir('EEG/*reject.mat')
 
 for i = 1 : length(fn)
     load(fn(i).name)
     d = ica_and_corr(d)
-    output = strcat(fn(i).name(1:7),'_ica')
+    output = strcat(fn(i).name(1:11),'_ica')
     d.filename = output
     d.input_file = fn(i).name
     write_data(output,d)
@@ -90,7 +121,18 @@ for i = 1 : length(fn)
     load(fn(i).name)
     create_ica_plot(d)
 end
+
 %-----------------------
+%fix filenames ica files. Filenames are stored in the data structure and the wrong name is stored.
+%This will fixed it
+%done done done done done done done done done done 
+fn = dir('EEG/*ica.mat')
+for i = 1:length(fn)
+	load(fn(i).name)
+	d.filename = fn(i).name
+	write_data(fn(i).name,d)
+end
+%------------------------------
 
 %check frequencies the frequencies for the preproc data (test if the
 %lowpass filter worked
@@ -113,19 +155,57 @@ end
 
 all_pp = bad_comp_all_pp();%creates a datastructure with file id and to be removed components
 %Recompose data without the bad components
-for i =  s : length(all_pp)
+for i =  1 : length(all_pp)
    disp(all_pp(i).file_id)
     d = extract_components(all_pp(i)) %recomposes the data withou the bad components
     write_data(d.filename,d)
 end
+%----------------------------------------
+
+%check threshold and return bad trial indices for each pp in the post ica files (clean)
+fn = dir('EEG/*_clean.mat')
+for i = 1 : length(fn)
+	load(fn(i).name)
+	disp(d.filename)
+	d = ft_redefinetrial(d.cfg_redefine,d)
+	cfg = check_threshold(d)
+	output = strcat(fn(i).name(1:7),'_thresholdclean')
+	write_file(output,cfg)
+end
+
+%--------------------------------------------------
+%from the reject files, print the blink info and from the clean (after ica) prent threshold rejection
+%difference between blink and threshold is that blinks are measured on the eog channels, whereas threshold is measured on all channels.
+fn = dir('*rejectblink.mat');
+fnc = dir('*thresholdclean.mat');
+fout = fopen('pp_reject_clean_blinks.txt','w');   
+for i = 1 : length(fn)
+    load(fn(i).name);
+    disp(fn(i).name);
+	 blinks = d.blinks;
+    [bt,nbt,nt,perc] = perc_blink_trials(blinks);
+	 %pp_id n_blinktrial ntrials_chunks per_blink_trials 
+    fprintf(fout,'%7s %6s %4d %4d %2d\n',fn(i).name(1:7),'reject',nbt,nt,perc);
+
+    load(fnc(i).name);
+    disp(fnc(i).name);
+    [bt,nbt,nt,perc] = perc_threshold_trials(d);
+	 %pp_id n_blinktrial ntrials_chunks per_blink_trials 
+    fprintf(fout,'%7s %6s %4d %4d %2d\n',fn(i).name(1:7),'clean',nbt,nt,perc);
+end
+fclose(fout);
+%
 
 %--------------------------
 
 %create plots (of blink trials, that compare ica-cleaned-data with the preproc-data
 
-all_pp = bad_comp_all_pp();%creates a datastructure with file id and to be removed components
+fn = dir('*rejectblink.mat');
 for i = 1 : length(all_pp);
-    plot_clean_preproc(all_pp(i)) %plots 10 blink trials
+	 load(fn(i).name)
+	 pp = d.blinks;
+	 pp.file_id = fn(i).name(1:7);
+    plot_clean_preproc(pp) %plots 10 blink trials
 end
 
 %---------------------------

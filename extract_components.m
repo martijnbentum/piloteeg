@@ -1,6 +1,6 @@
 function d = extract_components(pp)
 
-load(strcat(pp.file_id,'_preproc.mat'))
+load(strcat(pp.file_id,'_reject.mat'))
 preproc = ft_selectdata(d,'channel',{'all','-eogv','-eogh','-RM','-REF_LM','-Fp1'})
 input = strcat(pp.file_id,'_ica.mat')
 load(input)
