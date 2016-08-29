@@ -54,5 +54,9 @@ end
 cfg
 
 %plot, WOP: plot subplots if there are multiple trials
-plot(d.time{cfg.trial_index},d.trial{cfg.trial_index}(cfg.channel_index,:))
+if strcmp(cfg.channel_index,'all')
+	plot(d.time{cfg.trial_index},d.trial{cfg.trial_index}(:,:))
+else
+	plot(d.time{cfg.trial_index},d.trial{cfg.trial_index}(cfg.channel_index,:))
+end
 legend(cfg.legend)
