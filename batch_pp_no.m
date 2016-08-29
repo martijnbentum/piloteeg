@@ -57,7 +57,6 @@ for i = 1:length(fn)
     end
 fclose(fout);
 
-%pp info, ntrial nblinktrial perc badtrials preproc data
 fn = dir('EEG/*garbage.mat');
 fout = fopen('pp_bad_trial_info_preprocstories_ch_ep.txt','w');   
 ftrial_reject = fopen('pp_epoch_bad_trial.txt','w');
@@ -162,13 +161,55 @@ for i =  1 : length(all_pp)
 end
 %----------------------------------------
 
+%check channel variance on post ica files
+fn = dir('EEG/*_clean.mat')
+for i = 1: length(fn)
+	load(fn(i).name)
+	disp(d.filename)
+	c = [];
+	c.check_epoch = 'no';
+	c.check_blinks = 'no';
+	c.check_channel = 'yes';
+	cfg_channel = garbage_collection(c,d);	
+	output = strcat(fn(i).name(1:7),'_cfgchannel');
+	write_file(output,cfg_channel);
+end
+
+
+%write channel variance to text file
+fn = dir('EEG/*cfgchannel.mat');
+fout = fopen('cleandata_channel_noise.txt','w');   
+for i = 1 : length(fn)
+	load(fn(i).name)
+	[n_bad_var_ch,n_bad_cor_ch,n_bad_ch,bad_ch] = bad_channels(d);
+	%pp_id n_blinktrial ntrials_chunks per_blink_trials n_var_bad_channels n_cor_bad_channels bad_channels
+   fprintf(fout,'%7s %2d %2d %2d %s\n',fn(i).name(1:7),n_bad_var_ch,n_bad_cor_ch,n_bad_ch,bad_ch);  
+end
+fclose(fout);
+
+%------------------------------------------------------------------------------------------
+%create clean word trials
+
+fn = dir('EEG/*_clean.mat')
+for i = 1 : length(fn)
+	load(fn(i).name)
+	disp(d.filename)
+	d = channel_interpolate(d);
+	d = story2word_trials([],d);
+	d.clean_input1 = d.input_file1;
+	d.clean_input2 = d.input_file2;
+	d.input_file = d.filename;
+	d.filename = strcat(fn(i).name(1:7),'_thresholdclean')
+	write_data(d.filename,d)
+end
+%------------------------------------------------------------------------------------------
 %check threshold and return bad trial indices for each pp in the post ica files (clean)
 fn = dir('EEG/*_clean.mat')
 for i = 1 : length(fn)
 	load(fn(i).name)
 	disp(d.filename)
-	d = ft_redefinetrial(d.cfg_redefine,d)
-	cfg = check_threshold(d)
+	d = story2word_trials([],d);
+	cfg = check_threshold(d);
 	output = strcat(fn(i).name(1:7),'_thresholdclean')
 	write_file(output,cfg)
 end
@@ -209,6 +250,51 @@ for i = 1 : length(all_pp);
 end
 
 %---------------------------
+%alternative plots of blinks trials, instead of word trials -> story trials, it compares reject -ica comps and clean
+fn = dir('EEG/*_reject.mat')
+fni = dir('EEG/*_ica.mat')
+fnc = dir('EEG/*_clean.mat')
+for i = 1 : length(fn)
+	load(fn(i).name)
+	ica = load(fni(i).name)
+	clean = load(fnc(i).name)
+	cfg.ci = 'Fz';
+	clf;
+	hold on
+	easy_plot(cfg,d)
+	easy_plot(cfg,clean.d)
+	cfg.ci = clean.d.component;
+	easy_plot(cfg,ica.d)
+	hold off	
+	fig = gcf;
+	saveas(fig,strcat(d.filename(1:7),'_blinkstory_plot.png'));
+end
+
+%create baseline erp amplitude correlation with different filter setting
+fn = dir('EEG/*_clean.mat')
+baseline_erp_correlation = [];
+for i = 1 : length(fn)
+	load(fn(i).name);
+	d = story2word_trials([],d);	
+	for freq = [0 0.25 0.3 0.5]
+		cfg.hpfreq = freq;
+		output = correlation_baseline_erp(cfg,d);
+		baseline_erp_correlation = [baseline_erp_correlation output];
+	end
+end
+write_file('baseline_erp_correlation',baseline_erp_correlation);
+
+load('baseline_erp_correlation.mat');
+for i = 1:4
+	berp = [];
+	freq =i:4:73*4;
+	temp = d(freq);
+	berp.average = mean([temp(:).cor]);
+	berp.sd = std([temp(:).cor]);
+	berp.freq = [temp(1:5).hpfreq];
+	berp.id = [temp.pp_id];
+	berp
+end
 
 %find all trials that exceed threshold and save it to the cfg file, this can be used lateron to be removed before other steps, use this code:
 %cfg.trials = setdiff(1:length(d.trial),preproc_cfg.d.rejected_trials);
