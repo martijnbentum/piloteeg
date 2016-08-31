@@ -189,36 +189,38 @@ fclose(fout);
 
 %------------------------------------------------------------------------------------------
 %create clean word trials
-
+%29-08-2016 because the word trials need to be hp filterd again it 
+%saves a lot of time to save the word trial datastructure
 fn = dir('EEG/*_clean.mat')
-for i = 1 : length(fn)
+for i = 6 : length(fn)
 	load(fn(i).name)
 	disp(d.filename)
-	d = channel_interpolate(d);
+	temp = d;
 	d = story2word_trials([],d);
-	d.clean_input1 = d.input_file1;
-	d.clean_input2 = d.input_file2;
-	d.input_file = d.filename;
-	d.filename = strcat(fn(i).name(1:7),'_thresholdclean')
+	d.clean_input1 = temp.input_file1;
+	d.clean_input2 = temp.input_file2;
+	d.input_file = temp.filename;
+	d.filename = strcat(fn(i).name(1:7),'_clean_word_interpolate')
+	d = channel_interpolate([],d);
 	write_data(d.filename,d)
 end
 %------------------------------------------------------------------------------------------
 %check threshold and return bad trial indices for each pp in the post ica files (clean)
-fn = dir('EEG/*_clean.mat')
+fn = dir('*_clean_word_interpolate.mat')
 for i = 1 : length(fn)
 	load(fn(i).name)
 	disp(d.filename)
-	d = story2word_trials([],d);
 	cfg = check_threshold(d);
-	output = strcat(fn(i).name(1:7),'_thresholdclean')
+	output = strcat(fn(i).name(1:7),'_thresholdcfg')
 	write_file(output,cfg)
 end
 
 %--------------------------------------------------
+%should still be run now i am saving word level trial data structure
 %from the reject files, print the blink info and from the clean (after ica) prent threshold rejection
 %difference between blink and threshold is that blinks are measured on the eog channels, whereas threshold is measured on all channels.
 fn = dir('*rejectblink.mat');
-fnc = dir('*thresholdclean.mat');
+fnc = dir('*thresholdcfg.mat');
 fout = fopen('pp_reject_clean_blinks.txt','w');   
 for i = 1 : length(fn)
     load(fn(i).name);
@@ -269,6 +271,10 @@ for i = 1 : length(fn)
 	fig = gcf;
 	saveas(fig,strcat(d.filename(1:7),'_blinkstory_plot.png'));
 end
+
+%----------------------------------------
+%end of blink plots Mon 29 Aug 2016 04:54:36 PM CEST 
+%----------------------------------------
 
 %create baseline erp amplitude correlation with different filter setting
 fn = dir('EEG/*_clean.mat')
