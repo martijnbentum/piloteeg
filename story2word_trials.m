@@ -16,12 +16,12 @@ output = ft_redefinetrial(d.cfg_redefine,d);
 c.hpfilter = 'yes';
 c.hpfreq = cfg.hpfreq;
 c.hpfiltord = cfg.hpfiltord;
-disp('filtering with following config file (ft_preprocessing);
+disp('filtering with following config file (ft_preprocessing)');
 c
 output = ft_preprocessing(c,output);
 
 
-output = ft_redefinetrial(d.cfg_redefine,d);
+%output = ft_redefinetrial(d.cfg_redefine,d);%double???, should first redefine, then filter - not redefine again.
 
 %restore info from original d file
 output.c = d.c;
