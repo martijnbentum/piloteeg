@@ -19,7 +19,7 @@ cfg = [];
 
 %obsolete cfg.d.trl is not defined for words
 %cfg.trl = preproc_cfg.d.trl;
-d.trl = [d.sampleinfo zeros(size(d.sampleinfo,1),1)];
+cfg.trl = [d.sampleinfo zeros(size(d.sampleinfo,1),1)];
 cfg.continuous = 'no';
 cfg.artfctdef.threshold.min       = -75;
 cfg.artfctdef.threshold.max       = 75;
