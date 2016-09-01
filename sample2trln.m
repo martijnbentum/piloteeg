@@ -1,4 +1,7 @@
 %find the trial number based on the sample numbers
+%artifact contains a list of sample numbers corresponding to bad trials
+%if these match with the sample numbers the trln is equal to the index
+%of those sample numbers
 function indices = sample2trln(artifact,sample)
 
 indices = [];
