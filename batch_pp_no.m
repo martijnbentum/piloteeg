@@ -160,8 +160,10 @@ for i =  1 : length(all_pp)
     write_data(d.filename,d)
 end
 %----------------------------------------
-
+%channel variance
+%----------------------------------------
 %check channel variance on post ica files
+%this is to determine which channels should be interpolated
 fn = dir('EEG/*_clean.mat')
 for i = 1: length(fn)
 	load(fn(i).name)
@@ -175,7 +177,6 @@ for i = 1: length(fn)
 	write_file(output,cfg_channel);
 end
 
-
 %write channel variance to text file
 fn = dir('EEG/*cfgchannel.mat');
 fout = fopen('cleandata_channel_noise.txt','w');   
@@ -186,17 +187,43 @@ for i = 1 : length(fn)
    fprintf(fout,'%7s %2d %2d %2d %s\n',fn(i).name(1:7),n_bad_var_ch,n_bad_cor_ch,n_bad_ch,bad_ch);  
 end
 fclose(fout);
+%----------------------------------------
+%end channel variance
+%----------------------------------------
 
 %------------------------------------------------------------------------------------------
-%create clean word trials
+%check threshold and return bad trial indices for each pp in the post ica files (clean)
+fn = dir('EEG/*_clean.mat')
+parfor i = 1 : length(fn)
+	d = load(fn(i).name)
+	d = d.d
+	disp(d.filename)
+	cfg = check_threshold(d);
+	output = strcat(fn(i).name(1:7),'_threshold_cleancfg')
+	write_file(output,cfg)
+end
+
+
+
+%------------------------------------------------------------------------------------------
+%create word based trials
+%------------------------------------------------------------------------------------------
+%create word based trials and filter them with 0.3 hp filter
+%interpolate all bad channels with high variance low correlation with other channels
+%interpolation info is stored in the d structure
+%
 %29-08-2016 because the word trials need to be hp filterd again it 
 %saves a lot of time to save the word trial datastructure
+% 31/08/16 13:44, set hpfreq to 0.3 to minimize correlation between baseline and erp window 
 fn = dir('EEG/*_clean.mat')
-for i = 6 : length(fn)
-	load(fn(i).name)
-	disp(d.filename)
-	temp = d;
-	d = story2word_trials([],d);
+parfor i = 1: length(fn)
+	temp =	load(fn(i).name)
+	temp = temp.d
+	disp(temp.filename)
+	d = temp;
+	c = [];
+	c.hpfreq = 0.3;
+	d = story2word_trials(c,d);
 	d.clean_input1 = temp.input_file1;
 	d.clean_input2 = temp.input_file2;
 	d.input_file = temp.filename;
@@ -207,38 +234,40 @@ end
 %------------------------------------------------------------------------------------------
 %check threshold and return bad trial indices for each pp in the post ica files (clean)
 fn = dir('*_clean_word_interpolate.mat')
-for i = 1 : length(fn)
-	load(fn(i).name)
+parfor i = 1 : length(fn)
+	d = load(fn(i).name)
+	d = d.d
 	disp(d.filename)
 	cfg = check_threshold(d);
-	output = strcat(fn(i).name(1:7),'_thresholdcfg')
+	output = strcat(fn(i).name(1:7),'_threshold_clean_wordcfg')
 	write_file(output,cfg)
 end
 
 %--------------------------------------------------
 %should still be run now i am saving word level trial data structure
 %from the reject files, print the blink info and from the clean (after ica) prent threshold rejection
-%difference between blink and threshold is that blinks are measured on the eog channels, whereas threshold is measured on all channels.
-fn = dir('*rejectblink.mat');
-fnc = dir('*thresholdcfg.mat');
-fout = fopen('pp_reject_clean_blinks.txt','w');   
+fnc = dir('_threshold_cleancfg')
+fnw = dir('*threshold_clean_wordcfg.mat');
+fout = fopen('pp_reject_clean_word_interpolate_blinks_plus_clean.txt','w');   
 for i = 1 : length(fn)
-    load(fn(i).name);
-    disp(fn(i).name);
-	 blinks = d.blinks;
-    [bt,nbt,nt,perc] = perc_blink_trials(blinks);
-	 %pp_id n_blinktrial ntrials_chunks per_blink_trials 
-    fprintf(fout,'%7s %6s %4d %4d %2d\n',fn(i).name(1:7),'reject',nbt,nt,perc);
-
     load(fnc(i).name);
     disp(fnc(i).name);
     [bt,nbt,nt,perc] = perc_threshold_trials(d);
 	 %pp_id n_blinktrial ntrials_chunks per_blink_trials 
     fprintf(fout,'%7s %6s %4d %4d %2d\n',fn(i).name(1:7),'clean',nbt,nt,perc);
+
+	 load(fnw(i).name);
+    disp(fnw(i).name);
+    [bt,nbt,nt,perc] = perc_threshold_trials(d);
+	 %pp_id n_blinktrial ntrials_chunks per_blink_trials 
+    fprintf(fout,'%7s %6s %4d %4d %2d\n',fn(i).name(1:7),'words',nbt,nt,perc);
 end
+
 fclose(fout);
 %
 
+%------------------------------
+%begin of blink plots Mon 29 Aug 2016 04:54:36 PM CEST 
 %--------------------------
 
 %create plots (of blink trials, that compare ica-cleaned-data with the preproc-data
@@ -276,8 +305,10 @@ end
 %end of blink plots Mon 29 Aug 2016 04:54:36 PM CEST 
 %----------------------------------------
 
+%----------------------------------------
 %create baseline erp amplitude correlation with different filter setting
-fn = dir('EEG/*_clean.mat')
+%----------------------------------------
+fn = dir('*clean_word_interpolate.mat')
 baseline_erp_correlation = [];
 for i = 1 : length(fn)
 	load(fn(i).name);
@@ -288,7 +319,7 @@ for i = 1 : length(fn)
 		baseline_erp_correlation = [baseline_erp_correlation output];
 	end
 end
-write_file('baseline_erp_correlation',baseline_erp_correlation);
+write_file('baseline_erp_correlation1',baseline_erp_correlation);
 
 load('baseline_erp_correlation.mat');
 for i = 1:4
@@ -301,6 +332,12 @@ for i = 1:4
 	berp.id = [temp.pp_id];
 	berp
 end
+%----------------------------------------
+% 31/08/16 14:01 , found that hp filter of 0.3 results in lowest correlation between baseline and erp window 
+% used to create clean_word_interpolate files, which can be the basis for my analysis
+% end create baseline erp amplitude correlation 
+%----------------------------------------
+
 
 %find all trials that exceed threshold and save it to the cfg file, this can be used lateron to be removed before other steps, use this code:
 %cfg.trials = setdiff(1:length(d.trial),preproc_cfg.d.rejected_trials);
@@ -325,26 +362,47 @@ end
 % 999.99 this means that the word was not part of the vocabulary, this means that
 % the word is most probably one of the pseudowords in the stories, these words
 % should be removed from the analysis
-fn = dir('EEG/*_clean.mat');
-for i = 2 : length(fn)
-	load(fn(i).name)
+fn = dir('*_clean_word_interpolate.mat');
+for i = 1 : length(fn)
+	d = load(fn(i).name)
+	d = d.d
 	disp(fn(i).name)
-	ti = add_logprob(d);
-	d.old_trialinfo = d.trialinfo;
-	d.trialinfo = ti;
-	write_data(strcat('EEG/',d.filename),d)
+	if ~isfield(d,'old_trialinfo')
+		ti = add_logprob(d);
+		d.old_trialinfo = d.trialinfo;
+		d.trialinfo = ti;
+		write_data(d.filename,d)
+		disp('added log prob to trialinfo')
+	else
+		disp('logprob was already added to trialinfo')
+	end
 end
-%--------------------------
+
+%--------------------------------------------------------------------------------
+%create condition structure
+%--------------------------------------------------------------------------------
+%first group pp id according to day and reduced and unreduced 
+%this is based on the preproc cfg file
 pp = make_pp_groups();
 save('pp_groups.mat','pp')
+%--------------------------------------------------------------------------------
+%select trials: open classed words (higher lower quantile, or all) remove
+%closed class words, threshold rejected trials and pseudowords
 load('pp_groups.mat')
 pp = select_trials(pp);
 save('pp_condition_trials.mat','pp')
+%--------------------------------------------------------------------------------
+%
 load('pp_condition_trials.mat')
 pp = create_averages(pp);
 save('pp_condition_averages.mat','pp')
 load('pp_condition_averages.mat')
+%--------------------------------------------------------------------------------
 
+
+%--------------------------------------------------------------------------------
+%create grand averages for the reduced and unreduced groups and for day 1 and day 3
+%--------------------------------------------------------------------------------
 pp = create_grandaverages(pp,'day1','unreduced','open_class_avg');
 pp = create_grandaverages(pp,'day1','unreduced','lower_q_avg');
 pp = create_grandaverages(pp,'day1','unreduced','higher_q_avg');
@@ -352,11 +410,15 @@ pp = create_grandaverages(pp,'day1','unreduced','higher_q_avg');
 pp = create_grandaverages(pp,'day3','unreduced','open_class_avg');
 pp = create_grandaverages(pp,'day3','unreduced','lower_q_avg');
 pp = create_grandaverages(pp,'day3','unreduced','higher_q_avg');
+%--------------------------------------------------------------------------------
 
+%--------------------------------------------------------------------------------
+%load grand averages of lower and higher quantile and all for day1 and day 3 
+%and preprocess them for baseline correction
+%--------------------------------------------------------------------------------
 cfg = []
 cfg.demean='yes'   
 cfg.baselinewindow=[-0.150 0]
-
 
 oc1 =pp.day1.unreduced.grand_open_class_avg       
 lq1 =pp.day1.unreduced.grand_lower_q_avg 
@@ -375,6 +437,9 @@ ocb3 = ft_preprocessing(cfg,oc3)
 lqb3 = ft_preprocessing(cfg,lq3)
 hqb3 = ft_preprocessing(cfg,hq3)                           
 
+%--------------------------------------------------------------------------------
+%plots grand averages unreduced day1 and day 3
+%--------------------------------------------------------------------------------
 hold off
 plot(lq.time,lqb1.avg(19,:))  
 hold on
@@ -388,7 +453,11 @@ hold on
 plot(lq.time,hqb3.avg(19,:))  
 plot(lq.time,ocb3.avg(19,:))  
 legend('lq','hq','oc3')
+%end plots
 
+%--------------------------------------------------
+%collapse over day1 and day3 for unreduced trials
+%--------------------------------------------------
 gavg_lq = ft_timelockgrandaverage([],lqb1,lqb3)    
 gavg_hq = ft_timelockgrandaverage([],hqb1,hqb3)
 gavg_oc = ft_timelockgrandaverage([],ocb1,ocb3)    
@@ -402,6 +471,12 @@ legend('lq','hq','oc 1 3')
 
 save('pp_grand_averages.mat','pp')
 load('pp_grand_averages.mat','pp')
+
+
+
+%------------------------------
+%old code
+%------------------------------
 
 %create averages for all conditions and create difference waves, put them
 %in 1 data structure
