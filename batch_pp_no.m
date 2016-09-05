@@ -193,6 +193,8 @@ fclose(fout);
 
 %------------------------------------------------------------------------------------------
 %check threshold and return bad trial indices for each pp in the post ica files (clean)
+% 01/09/16 11:40, this is on the story trial, percentage gives an idea, but it could be an improvement
+%to first do story2word_trials, to make it a better comparison with the interpolated word files
 fn = dir('EEG/*_clean.mat')
 parfor i = 1 : length(fn)
 	d = load(fn(i).name)
@@ -201,6 +203,21 @@ parfor i = 1 : length(fn)
 	cfg = check_threshold(d);
 	output = strcat(fn(i).name(1:7),'_threshold_cleancfg')
 	write_file(output,cfg)
+end
+
+%check threshold for overlap files to check whether it is worse for no overlap files
+% 01/09/16 11:41 I found that some PP have a lot of threshhold rejected trials I could not remember
+%that this happened for the overlap version of the analysis, therefore i check the n threshrejected trials
+%of that analysis below. I found that in most cases it is similar with some improvement for the new
+%analysis. Only 08_03 was significantly worse 11 -> 83% rejected. Futhermore, the range of amplitudes of the no_overlap files seems to be larger. This could because in the overlap case the high pass filter immediately corrects any offset, while in the no overlap case this will not happen.
+fn = dir('EEG/CLEAN_OVERLAP/*_clean.mat')
+parfor i = 1 : length(fn)
+   d = load(strcat('EEG/CLEAN_OVERLAP/',fn(i).name))
+   d = d.d
+   disp(d.filename)
+   cfg = check_threshold(d);
+   output = strcat(fn(i).name(1:7),'_clean_overlapcfg')
+   write_file(output,cfg)
 end
 
 
@@ -244,17 +261,25 @@ parfor i = 1 : length(fn)
 end
 
 %--------------------------------------------------
-%should still be run now i am saving word level trial data structure
-%from the reject files, print the blink info and from the clean (after ica) prent threshold rejection
-fnc = dir('_threshold_cleancfg')
+%comparing clean pre interpolate ( 01/09/16 11:45 clean story files) with old overlap clean files, with no overlap interpolate word files (last one will be used in analysis). FOund that interpolate mostly performs best (least number of threshold rejection (however it has a larger range of amplitudes compared to old overlap files) in one case 8-3 interpolate word file was really bad (old)11% -> interpolate(83%)
+%IMPORTANT NOTE: i move all these threshold files to the folder EEG/THRESHOLD, if you want to run this code
+%you probably need to alter the code
+fno = dir('*clean_overlapcfg.mat');
+fnc = dir('*threshold_cleancfg.mat')
 fnw = dir('*threshold_clean_wordcfg.mat');
 fout = fopen('pp_reject_clean_word_interpolate_blinks_plus_clean.txt','w');   
-for i = 1 : length(fn)
+for i = 1 : length(fno)
+    load(fno(i).name);
+    disp(fno(i).name);
+    [bt,nbt,nt,perc] = perc_threshold_trials(d);
+	 %pp_id n_blinktrial ntrials_chunks per_blink_trials 
+    fprintf(fout,'%7s %6s %4d %4d %2d\n',fn(i).name(1:7),'oldcl',nbt,nt,perc);
+
     load(fnc(i).name);
     disp(fnc(i).name);
     [bt,nbt,nt,perc] = perc_threshold_trials(d);
 	 %pp_id n_blinktrial ntrials_chunks per_blink_trials 
-    fprintf(fout,'%7s %6s %4d %4d %2d\n',fn(i).name(1:7),'clean',nbt,nt,perc);
+   % fprintf(fout,'%7s %6s %4d %4d %2d\n',fn(i).name(1:7),'clean',nbt,nt,perc);
 
 	 load(fnw(i).name);
     disp(fnw(i).name);
@@ -339,18 +364,9 @@ end
 %----------------------------------------
 
 
-%find all trials that exceed threshold and save it to the cfg file, this can be used lateron to be removed before other steps, use this code:
+%all trials that exceed threshold are saved to a cfg file, this can be used lateron to be removed before other steps, use this code:
 %cfg.trials = setdiff(1:length(d.trial),preproc_cfg.d.rejected_trials);
 %d        = ft_selectdata(cfg, d); 
-
-fn = dir('EEG/*_clean.mat');
-for i = 1 : length(fn)
-    load(fn(i).name)
-    cfg = check_threshold(d) %removes all trials that exceeds -75 75 mu volts
-    output = strcat(fn(i).name(1:7),'_cfg');
-    write_file(output,cfg)
-end
-
 %---------------------------
 %important note, I did not make clean_threshold files, to save on disk space
 
@@ -441,17 +457,17 @@ hqb3 = ft_preprocessing(cfg,hq3)
 %plots grand averages unreduced day1 and day 3
 %--------------------------------------------------------------------------------
 hold off
-plot(lq.time,lqb1.avg(19,:))  
+plot(lq1.time,lqb1.avg(19,:))  
 hold on
-plot(lq.time,hqb1.avg(19,:))  
-plot(lq.time,ocb1.avg(19,:))                                                              
+plot(lq1.time,hqb1.avg(19,:))  
+plot(lq1.time,ocb1.avg(19,:))                                                              
 legend('lq','hq','oc1')
 
 hold off
-plot(lq.time,lqb3.avg(19,:))  
+plot(lq3.time,lqb3.avg(19,:))  
 hold on
-plot(lq.time,hqb3.avg(19,:))  
-plot(lq.time,ocb3.avg(19,:))  
+plot(lq3.time,hqb3.avg(19,:))  
+plot(lq3.time,ocb3.avg(19,:))  
 legend('lq','hq','oc3')
 %end plots
 
