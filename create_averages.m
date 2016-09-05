@@ -1,5 +1,9 @@
 function  pp = create_averages(pp)
 
+
+d_filename = '_clean_word_interpolate_alt.mat'
+
+
 reduced = [1 2];
 day_id = [1 3];
 red = {'unreduced' 'reduced'};
@@ -14,8 +18,8 @@ for day_index = 1:2
 		disp(strcat(day(day_index),'-',red(r)))
 		for i = 1:length(fn.file_id)
 		%for each pp in condition calculate the average (this is not demeaned, but you can do this afterwards
-			disp(strcat(fn.file_id(i),'_clean.mat'))%show filename
-			load(strcat(strjoin(fn.file_id(i)),'_clean.mat'))%load file
+			disp(strcat(fn.file_id(i),d_filename))%show filename
+			load(strcat(strjoin(fn.file_id(i)),d_filename))%load file
 			cfg = getfield(fn, strjoin(fn.file_id(i)))%extract pp info
 
 			%extract all trials with open class words
