@@ -7,9 +7,10 @@ function output = story2word_trials(cfg,d)
 %set defaults if necessary, hpfreq can be set to find filter freq with lowest cor between baseline and erp window
 if ~isfield(cfg,'hpfreq'),cfg.hpfreq = 0.05; end
 if ~isfield(cfg,'hpfiltord'),cfg.hpfiltord = 4;end
+if ~isfield(cfg,'redefine'),cfg.redefine = d.redefine;
 
 %create word trials based on the cfg redefine structure
-output = ft_redefinetrial(d.cfg_redefine,d);
+output = ft_redefinetrial(cfg.redefine,d);
 
 
 %create config structure for  preprocessing
