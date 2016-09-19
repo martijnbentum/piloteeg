@@ -22,4 +22,14 @@ tag id
 	2	tag (determiner) index 18
 	0	closed class index 19
 
+trialinfo explained
+pp_id,day_id, story_id, reduced, word_id, duration_word,tag,closed_class,logprob
 
+
+output
+pp_id,day_id, story_id, reduced, word_id, duration_word,tag,closed_class,logprob,base_average,erp_average
+
+
+reduced: unreduced = 1 reduced 2
+{'PREP':'31','DET':'32','ADJ':'33','VERB':'34','NOUN':'35','PRON':'36','ADV':'37','CON':'38','OTH':'39','OPEN':'1','CLOSED':'0'}
+{'PREP':'1','DET':'2','ADJ':'3','VERB':'4','NOUN':'5','PRON':'6','ADV':'7','CON':'8','OTH':'9','OPEN':'1','CLOSED':'0'}
