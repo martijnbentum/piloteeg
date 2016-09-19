@@ -1,5 +1,5 @@
 %create processingpool
-workers =15
+workers =18
 pilot = parpool(workers,'IdleTimeout',10);
 % preprocessing -> load data filter and create eog channels
 %load all filesnames
@@ -394,19 +394,19 @@ end
 %first group pp id according to day and reduced and unreduced 
 %this is based on the preproc cfg file
 pp = make_pp_groups();
-save('pp_groups.mat','pp')
+save('pp_groups_alt.mat','pp')
 %--------------------------------------------------------------------------------
 %select trials: open classed words (higher lower quantile, or all) remove
 %closed class words, threshold rejected trials and pseudowords
-load('pp_groups.mat')
+load('pp_groups_alt.mat')
 pp = select_trials(pp);
-save('pp_condition_trials.mat','pp')
+save('pp_condition_trials_alt.mat','pp')
 %--------------------------------------------------------------------------------
 %
-load('pp_condition_trials.mat')
+load('pp_condition_trials_alt.mat')
 pp = create_averages(pp);
-save('pp_condition_averages.mat','pp')
-load('pp_condition_averages.mat')
+save('pp_condition_averages_alt.mat','pp')
+load('pp_condition_averages_alt.mat')
 %--------------------------------------------------------------------------------
 
 
@@ -426,6 +426,9 @@ pp = create_grandaverages(pp,'day3','unreduced','higher_q_avg');
 %load grand averages of lower and higher quantile and all for day1 and day 3 
 %and preprocess them for baseline correction
 %--------------------------------------------------------------------------------
+ci = 44;
+
+
 cfg = []
 cfg.demean='yes'   
 cfg.baselinewindow=[-0.150 0]
@@ -451,17 +454,17 @@ hqb3 = ft_preprocessing(cfg,hq3)
 %plots grand averages unreduced day1 and day 3
 %--------------------------------------------------------------------------------
 hold off
-plot(lq1.time,lqb1.avg(19,:))  
+plot(lq1.time,lqb1.avg(ci,:))  
 hold on
-plot(lq1.time,hqb1.avg(19,:))  
-plot(lq1.time,ocb1.avg(19,:))                                                              
+plot(lq1.time,hqb1.avg(ci,:))  
+plot(lq1.time,ocb1.avg(ci,:))                                                              
 legend('lq','hq','oc1')
 
 hold off
-plot(lq3.time,lqb3.avg(19,:))  
+plot(lq3.time,lqb3.avg(ci,:))  
 hold on
-plot(lq3.time,hqb3.avg(19,:))  
-plot(lq3.time,ocb3.avg(19,:))  
+plot(lq3.time,hqb3.avg(ci,:))  
+plot(lq3.time,ocb3.avg(ci,:))  
 legend('lq','hq','oc3')
 %end plots
 
@@ -473,14 +476,77 @@ gavg_hq = ft_timelockgrandaverage([],hqb1,hqb3)
 gavg_oc = ft_timelockgrandaverage([],ocb1,ocb3)    
 
 hold off
-plot(lq.time,gavg_lq.avg(19,:))  
+plot(lq1.time,gavg_lq.avg(ci,:))  
 hold on
-plot(lq.time,gavg_hq.avg(19,:))  
-plot(lq.time,gavg_oc.avg(19,:))  
+plot(lq1.time,gavg_hq.avg(ci,:))  
+plot(lq1.time,gavg_oc.avg(ci,:))  
 legend('lq','hq','oc 1 3')
 
 save('pp_grand_averages.mat','pp')
 load('pp_grand_averages.mat','pp')
+
+%------------------------------------------------------------------------------------------
+%plot multiple channels lq hq oc
+%------------------------------------------------------------------------------------------
+%damacher setup
+row = 4;
+col = 3;
+cfg = []
+cfg.setup = 'damacher'
+channels = channel_setup(cfg)
+channel_indices = [6 19 20 8 48 17 11 10 15 42 43 44]; %index of channel should be added to output channel_setup
+%posterior setup
+row = 4;
+col = 7;
+channels = channel_setup([]);
+channel_indices = [36 6 35 19 52 20 51 8 38 9 48 18 49 17 40 11 39 10 47 15 46 42 43 44];
+
+
+%day1
+for i = 1 :length(channels) 
+	subplot(row,col,i)
+	ci = channel_indices(i);
+	%plot
+	hold off
+	plot(lq1.time,lqb1.avg(ci,:))  
+	hold on
+	plot(lq1.time,hqb1.avg(ci,:))  
+	plot(lq1.time,ocb1.avg(ci,:))                                                              
+	legend('lq','hq','oc1')
+	title(channels(i))
+end
+%day2
+for i = 1 :length(channels) 
+	subplot(row,col,i)
+   ci = channel_indices(i);
+   %plot
+   hold off
+   plot(lq1.time,lqb3.avg(ci,:))                                                                                    
+   hold on
+   plot(lq1.time,hqb3.avg(ci,:))  
+   plot(lq1.time,ocb3.avg(ci,:))                                                              
+   legend('lq','hq','oc1')
+   title(channels(i))
+end
+%day 1 and 3
+for i = 1 :length(channels) 
+	subplot(row,col,i)
+   ci = channel_indices(i);
+   %plot
+
+	hold off
+	plot(lq1.time,gavg_lq.avg(ci,:))  
+	hold on
+	plot(lq1.time,gavg_hq.avg(ci,:))  
+	plot(lq1.time,gavg_oc.avg(ci,:))  
+	legend('lq','hq','oc 1 3')
+  	title(channels(i))
+end
+
+%------------------------------------------------------------------------------------------
+%end plot %end plot %end plot %end plot
+%------------------------------------------------------------------------------------------
+
 
 
 
