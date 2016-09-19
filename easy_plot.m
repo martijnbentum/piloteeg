@@ -1,6 +1,6 @@
 function easy_plot(cfg,d)
 %function to easily plot fieldtrip eeg data
-%takes a cfg and a data file
+%takes a cfg and a data file/ average 
 %cfg can be empty
 %ti or trial_index for trials to plot (work in progress to plot multiple trials seperately), default =1
 %ci or channel index for channels to plot, can be number, label name or all, default = fz cz pz
@@ -12,6 +12,22 @@ function easy_plot(cfg,d)
 if isfield(cfg,'ti'), cfg.trial_index = cfg.ti; end
 if ~isfield(cfg,'trial_index'), cfg.trial_index = 1; end %TRIAL INDEX code
 if isfield(cfg,'ci'),cfg.channel_index = cfg.ci; end
+
+
+
+%baseline demean
+%------------------------------------------------------------------------------------------
+if isfield(cfg,'demean')
+if strcmp(cfg.demean,'yes')
+	if ~isfield(cfg,'baselinewindow')
+		cfg.baselinewindow = [-0.15 0]; 
+		disp(strcat('using default baselinewindow: ',cfg.baselinewindow))
+	end
+	disp('baseline correction..')	
+	d = ft_preprocessing(cfg,d);
+end
+end
+
 
 %CHANNEL INDEX code
 %--------------------------------------------------
@@ -38,7 +54,8 @@ if isa(cfg.channel_index,'cell')
 	cfg.legend = cfg.channel_index;
 	temp = [];
 	for i = 1:length(cfg.channel_index)
-		temp = [temp find(strcmp(d.label,cfg.channel_index(i)))]
+		disp(i)
+		temp = [temp find(strcmp(d.label,cfg.channel_index(i)))];
 	end
 	cfg.channel_index = temp;	
 end
@@ -52,11 +69,25 @@ end
 
 %show final cfg
 cfg
-
+%------------------------------------------------------------------------------------------
 %plot, WOP: plot subplots if there are multiple trials
-if strcmp(cfg.channel_index,'all')
-	plot(d.time{cfg.trial_index},d.trial{cfg.trial_index}(:,:))
+
+%------------------------------------------------------------------------------------------
+%check if d file is an average file from ft_timelock or grand average
+%------------------------------------------------------------------------------------------
+if isfield(d,'avg')
+%average file,so no trial index
+	if strcmp(cfg.channel_index,'all')
+		plot(d.time,d.avg(:,:))
+	else
+		plot(d.time,d.avg(cfg.channel_index,:))
+	end
+%d file, so there is a trial index
 else
-	plot(d.time{cfg.trial_index},d.trial{cfg.trial_index}(cfg.channel_index,:))
+	if strcmp(cfg.channel_index,'all')
+		plot(d.time{cfg.trial_index},d.trial{cfg.trial_index}(:,:))
+	else
+		plot(d.time{cfg.trial_index},d.trial{cfg.trial_index}(cfg.channel_index,:))
+	end
 end
 legend(cfg.legend)
