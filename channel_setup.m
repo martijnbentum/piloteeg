@@ -6,7 +6,7 @@ if ~isfield(cfg,'setup'),cfg.setup = 'default'; end
 c = {'C5' 'C3' 'C1' 'Cz' 'C2' 'C4' 'C6'};
 cp = {'CP5' 'CP3' 'CP1' 'CPz' 'CP2' 'CP4' 'CP6'};
 p = {'P5' 'P3' 'P1' 'Pz' 'P2' 'P4' 'P6'};
-po = {'PO3' 'PO1' 'POz' 'PO2' 'PO4'};
+po = {'PO3' 'POz' 'PO4'};
 
 
 if strcmp(cfg.setup,'default')
