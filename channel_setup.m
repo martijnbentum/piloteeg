@@ -17,7 +17,14 @@ end
 
 if strcmp(cfg.setup,'damacher')
 %similar less dense setup, i use PO instead of O, because these are noisy, I use P5/P6, because P7/P8 are noisy.
-	channels = [c([2 4 6]) cp([1 4 7]) p([2 4 6]) po([1 3 5])];
+	channels = [c([2 4 6]) cp([1 4 7]) p([2 4 6]) po];
+end
+
+if strcmp(cfg.setup,'post_hoc')
+	channels = [c(4) cp(4) p([2 4 6]) po];
+	disp('output base on these channels')
+	disp(channels)
+
 end
 
 
