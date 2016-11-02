@@ -23,11 +23,11 @@ tag id
 	0	closed class index 19
 
 trialinfo explained
-pp_id,day_id, story_id, reduced, word_id, duration_word,tag,closed_class,logprob
+pp_id,day_id, story_id, reduced, word_index_in_story, duration_word,tag,closed_class,logprob
 
 
 output
-pp_id,day_id, story_id, reduced, word_id, duration_word,tag,closed_class,logprob,base_average,erp_average
+pp_id,day_id, story_id, reduced, word_index_in_story, duration_word,tag,closed_class,logprob,base_average,erp_average
 
 
 reduced: unreduced = 1 reduced 2
