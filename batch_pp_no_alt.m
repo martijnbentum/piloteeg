@@ -420,7 +420,11 @@ pp = create_grandaverages(pp,'day1','unreduced','higher_q_avg');
 pp = create_grandaverages(pp,'day3','unreduced','open_class_avg');
 pp = create_grandaverages(pp,'day3','unreduced','lower_q_avg');
 pp = create_grandaverages(pp,'day3','unreduced','higher_q_avg');
-%--------------------------------------------------------------------------------
+%
+save('pp_grand_averages.mat','pp')
+load('pp_grand_averages.mat','pp')
+
+--------------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------------
 %load grand averages of lower and higher quantile and all for day1 and day 3 
@@ -458,14 +462,17 @@ plot(lq1.time,lqb1.avg(ci,:))
 hold on
 plot(lq1.time,hqb1.avg(ci,:))  
 plot(lq1.time,ocb1.avg(ci,:))                                                              
-legend('lq','hq','oc1')
+%legend('lq','hq','oc1')
+%low log prob == high suprials
+legend('high s','low s','oc1')
 
 hold off
 plot(lq3.time,lqb3.avg(ci,:))  
 hold on
 plot(lq3.time,hqb3.avg(ci,:))  
 plot(lq3.time,ocb3.avg(ci,:))  
-legend('lq','hq','oc3')
+%legend('lq','hq','oc3')
+legend('high s','low s','oc1')
 %end plots
 
 %--------------------------------------------------
@@ -512,10 +519,11 @@ for i = 1 :length(channels)
 	hold on
 	plot(lq1.time,hqb1.avg(ci,:))  
 	plot(lq1.time,ocb1.avg(ci,:))                                                              
-	legend('lq','hq','oc1')
+	%legend('lq','hq','oc1')
+	legend('high s','low s','all1')
 	title(channels(i))
 end
-%day2
+%day3
 for i = 1 :length(channels) 
 	subplot(row,col,i)
    ci = channel_indices(i);
@@ -525,7 +533,9 @@ for i = 1 :length(channels)
    hold on
    plot(lq1.time,hqb3.avg(ci,:))  
    plot(lq1.time,ocb3.avg(ci,:))                                                              
-   legend('lq','hq','oc1')
+   %legend('lq','hq','oc3')
+	legend('high s','low s','all3')
+	title(channels(i))
    title(channels(i))
 end
 %day 1 and 3
@@ -539,16 +549,44 @@ for i = 1 :length(channels)
 	hold on
 	plot(lq1.time,gavg_hq.avg(ci,:))  
 	plot(lq1.time,gavg_oc.avg(ci,:))  
-	legend('lq','hq','oc 1 3')
+	%legend('lq','hq','oc 1 3')
+	legend('high s','low s','all13')
   	title(channels(i))
 end
 
 %------------------------------------------------------------------------------------------
 %end plot %end plot %end plot %end plot
 %------------------------------------------------------------------------------------------
+%save averages to output file
 
+fn = dir('EEG/*clean_word_interpolate.mat')
+cfg = [];
+c.setup = 'post_hoc';
+cfg.channels = channel_setup(c);
+cfg.name = 'post_hoc';
+for i = 1 : length(fn)
+   fn(i).name
+   load(fn(i).name);
+   d2output(cfg,d)
+end
 
+fn = dir('EEG/*clean_word_interpolate_alt.mat')
+cfg = [];
+c.setup = 'post_hoc';
+cfg.channels = channel_setup(c);
+cfg.name = 'post_hoc_alt';
+for i = 1 : length(fn)
+   fn(i).name
+   load(fn(i).name);
+   d2output(cfg,d)
+end
 
+fn = dir('EEG/*cfgstories*') 
+for i = 1 : length(fn)
+	fn(i).name
+	load(fn(i).name);
+	extract_trialinfo(d,true);
+end
 
 %------------------------------
 %old code
