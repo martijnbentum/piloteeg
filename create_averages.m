@@ -1,8 +1,13 @@
 function  pp = create_averages(pp)
 
+% old
+% d_filename = '_clean_word_interpolate_alt.mat'
 
-d_filename = '_clean_word_interpolate_alt.mat'
+%nf no mtrf reconstruct
+% d_filename = '_clean_word_interpolate_nf.mat'
 
+% nf mtr reconstruct
+d_filename = '_clean_word_interpolate_nf_recon.mat'
 
 reduced = [1 2];
 day_id = [1 3];
