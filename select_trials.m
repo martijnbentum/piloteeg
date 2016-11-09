@@ -1,9 +1,17 @@
 function  pp = select_trials(pp)
 %use the pp structure that holds pp according to day (1,3) and reduction (reduced, unreduced) created in make_pp_groups. THis function adds fields for each participant in a specific condition (name = file_id) and stores the trials to be removed all_trl_remove, this combines trials threshold rejected and trials that are closed class (it leaves all open class words. Futher info: filename of the clean file (after ica correction) n trials
 
+% old
+% d_filename = '_clean_word_interpolate_alt.mat'
+% cfg_threshold = '_threshold_clean_wordcfg_alt.mat'
 
-d_filename = '_clean_word_interpolate_alt.mat'
-cfg_threshold = '_threshold_clean_wordcfg_alt.mat'
+% for no mtrf files
+% d_filename = '_clean_word_interpolate_nf.mat'
+% cfg_threshold = '_threshold_clean_wordcfg_no_filter.mat'
+
+% for mtrf files
+d_filename = '_clean_word_interpolate_nf_recon.mat'
+cfg_threshold = '_threshold_clean_wordcfg_no_filter.mat'
 
 
 reduced = [1 2];
