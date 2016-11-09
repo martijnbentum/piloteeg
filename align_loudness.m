@@ -19,11 +19,11 @@ trial_start_sample = d.sampleinfo(index,1)
 start_dif =  story_start_sample - trial_start_sample 
 
 if start_dif > 0
-	disp('%audio file started before first eeg sample of this trial')
+	disp('%audio file started after first eeg sample of this trial')
 	disp('%padding with zeros')
 	loudness = [zeros(1,start_dif) loudness];
 elseif start_dif < 0
-	disp('%audio file started after first eeg sample of this trial')
+	disp('%audio file started before first eeg sample of this trial')
 	disp('%removing loudness samples')
 	loudness = loudness(1,start_dif + 1:end);
 else
@@ -42,7 +42,8 @@ if len_dif > 0
 elseif len_dif < 0
 	disp('loudness is longer compared to trial')
 	disp('removing loudness samples')
-	loudness = loudness(1,start:length(loudness) - len_dif);
+	loudness = loudness(1,1:length(loudness) + len_dif);
+	% len dif is added because in this case it is negative
 else
 	disp('trial and loudness are of equal length')
 	loudness = loudness;
