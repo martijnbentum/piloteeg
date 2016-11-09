@@ -20,7 +20,7 @@ erp = ft_redefinetrial(c,d);
 
 %load threshold rejected trials
 %------------------------------
-threshold = load(strcat('EEG/',d.filename(1:7),'_threshold_clean_wordcfg_alt.mat'))
+threshold = load(strcat('EEG/',d.filename(1:7),'_threshold_clean_wordcfg_no_filter.mat'))
 
 
 
