@@ -3,6 +3,7 @@ function samplen = storyid2samplen(storyid,d)
 
 %create story marker
 story_marker = strcat({'S '},num2str(storyid));
+story_marker = char( story_marker );
 if length(story_marker) == 3
 	story_marker =strcat({'S  '},num2str(storyid));
 end
