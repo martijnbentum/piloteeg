@@ -1,5 +1,5 @@
 %create processingpool
-workers =18
+workers =10
 pilot = parpool(workers,'IdleTimeout',10);
 % preprocessing -> load data filter and create eog channels
 %load all filesnames
@@ -14,6 +14,7 @@ end
 
 
 %load all data
+% create preproc story files
 fn = dir('EEG/*cfgstories.mat')
 parfor i = 1:length(fn)
 	cfg = load(fn(i).name);
@@ -24,6 +25,17 @@ parfor i = 1:length(fn)
 	output = strcat(cfg.d.headerfile(1:11),'_preprocstories');
 	d.filename = output
 	write_data(output,d);
+end
+
+% create loudness structures (same structure as the preprocstories eeg d file
+% now containing loudness envelope (loudness.inst)
+fn = dir('EEG/*preprocstories.mat')
+for i = 1:length(fn)
+	d = load(fn(i).name);
+	d = d.d;
+	dloudness = create_loudness_d(d);
+	output= dloudness.filename;
+	write_data(output,dloudness);
 end
 
 %load all data
@@ -76,6 +88,7 @@ fclose(fout);
 fclose(ftrial_reject);
 %---------------------------------------------------------
 
+% handle eeg files
 %create reject files, by removing all bad epoch from data
 all_pp = bad_epoch_all_pp();%creates a datastructure with file id and to be removed epochs
 parfor i =  1 : length(all_pp)
@@ -83,6 +96,15 @@ parfor i =  1 : length(all_pp)
     d = take_out_garbage_epoch(all_pp(i)) %recomposes the data withou the bad epoch
     write_data(d.filename,d)
 end
+
+% handle loudness files
+all_pp = bad_epoch_all_pp();%creates a datastructure with file id and to be removed epochs
+for i =  1 : length(all_pp)
+   disp(all_pp(i).file_id)
+    d = take_out_garbage_epoch_loudness(all_pp(i)) %recomposes the data withou the bad epoch
+    write_data(d.filename,d)
+end
+
 
 %create blink trial indices for each pp in the pre ica files
 fn = dir('EEG/*_reject.mat')
@@ -151,7 +173,6 @@ end
 %-------------------------
 
 %Add the components that need to be removed tot he all_pp -> all_pp_new
-
 all_pp = bad_comp_all_pp();%creates a datastructure with file id and to be removed components
 %Recompose data without the bad components
 for i =  1 : length(all_pp)
@@ -159,6 +180,24 @@ for i =  1 : length(all_pp)
     d = extract_components(all_pp(i)) %recomposes the data withou the bad components
     write_data(d.filename,d)
 end
+
+%perform mtrf on the clean files with the inst-loudness 
+fn = dir('*inst-loudness_reject.mat');
+for i = 1 : length(fn)
+	disp(fn(i).name)
+	d = load(fn(i).name);
+	dloudness = d.d;
+	clean_name = strcat(dloudness.filename(1:7),'_clean.mat');
+	disp(clean_name);
+	d = load(clean_name);
+	dclean = d.d;
+	dreconstruct = mtrf_reconstruction(dclean,dloudness); 
+	write_data(dreconstruct.filename,dreconstruct);
+end
+	
+
+
+
 %----------------------------------------
 %channel variance
 %----------------------------------------
@@ -178,8 +217,83 @@ for i = 1: length(fn)
 end
 
 %write channel variance to text file
-fn = dir('EEG/*cfgchannel.mat');
-fout = fopen('cleandata_channel_noise.txt','w');   
+%create reject files, by removing all bad epoch from data
+all_pp = bad_epoch_all_pp();%creates a datastructure with file id and to be removed epochs
+parfor i =  1 : length(all_pp)
+   disp(all_pp(i).file_id)
+    d = take_out_garbage_epoch(all_pp(i)) %recomposes the data withou the bad epoch
+    write_data(d.filename,d)
+end
+
+% handle loudness files
+all_pp = bad_epoch_all_pp();%creates a datastructure with file id and to be removed epochs
+for i =  1 : length(all_pp)
+   disp(all_pp(i).file_id)
+    d = take_out_garbage_epoch_loudness(all_pp(i)) %recomposes the data withou the bad epoch
+    write_data(d.filename,d)
+end
+
+
+%create blink trial indices for each pp in the pre ica files
+fn = dir('EEG/*_reject.mat')
+for i = 5 : length(fn)
+	load(fn(i).name)
+	cfg = []
+	cfg.c = d.cfg_redefine
+	cfg.check_epoch = 'no'
+	cfg.check_channel = 'no'	
+	blinks = garbage_collection(cfg,d)
+	blinks_out = strcat(d.filename(1:7),'_rejectblink')
+	write_file(blinks_out,blinks)
+end
+
+
+% ICA and correlate components with eog channels
+
+fn = dir('EEG/*reject.mat')
+
+for i = 1 : length(fn)
+    load(fn(i).name)
+    d = ica_and_corr(d)
+    output = strcat(fn(i).name(1:11),'_ica')
+    d.filename = output
+    d.input_file = fn(i).name
+    write_data(output,d)
+
+end
+
+% plot ICA with eog correlation values
+
+fn = dir('EEG/*ica.mat')
+
+for i = 1 : length(fn)
+    load(fn(i).name)
+    create_ica_plot(d)
+end
+
+%-----------------------
+%fix filenames ica files. Filenames are stored in the data structure and the wrong name is stored.
+%This will fixed it
+%done done done done done done done done done done 
+fn = dir('EEG/*ica.mat')
+for i = 1:length(fn)
+	load(fn(i).name)
+	d.filename = fn(i).name
+	write_data(fn(i).name,d)
+end
+%------------------------------
+
+%check frequencies the frequencies for the preproc data (test if the
+%lowpass filter worked
+%trial_numbers = 36:72:1720;
+trial_number = 1000;
+fn = dir('EEG/*preproc.mat');
+
+%periodograms = {1,length(fn)};
+for i = 1 : length(fn)
+    disp(fn(i).name)
+    disp(i)
+    load(fn(i).name);
 for i = 1 : length(fn)
 	load(fn(i).name)
 	[n_bad_var_ch,n_bad_cor_ch,n_bad_ch,bad_ch] = bad_channels(d);
@@ -223,7 +337,7 @@ end
 
 
 %------------------------------------------------------------------------------------------
-%create word based trials
+%create word based trials creates a normal no filter clean and a no filter clean - reconstruct
 %------------------------------------------------------------------------------------------
 %create word based trials and filter them with 0.3 hp filter
 %interpolate all bad channels with high variance low correlation with other channels
@@ -233,45 +347,128 @@ end
 %saves a lot of time to save the word trial datastructure
 % 31/08/16 13:44, set hpfreq to 0.3 to minimize correlation between baseline and erp window 
 %saved batch script with alt addition and put all transformation in the forloop that creates word trials because loading is time consuming
-fn = dir('*_clean.mat')
+fn = dir('EEG/*_clean.mat')
+fnrecon = dir('*inst-reconstruction.mat')
 parfor i = 1: length(fn)
 	temp =	load(fn(i).name)
 	temp = temp.d
 	disp(temp.filename)
 	d = temp;
-	%clean is ica cleaned story trials, with story2word, word trials are created and highpass filtered
-	disp('creating word trials and hp filtering at default value (0.05)')
-	d = story2word_trials([],d);
+	%clean is ica cleaned story trials, with story2word, word trials are created 
+	disp('creating word trials and no hp filtering')
+	c.hpfilter = 'no';
+	d = story2word_trials(c,d);
 	d.clean_input1 = temp.input_file1;
 	d.clean_input2 = temp.input_file2;
 	d.input_file = temp.filename;
-	d.filename = strcat(fn(i).name(1:7),'_clean_word_interpolate_alt')
-	%interpolation of bad channels (is based on variance and correlation on the post ica clean files
-	disp('interpolating bad channels')
-	d = channel_interpolate([],d);
+	d.filename = strcat(fn(i).name(1:7),'_clean_word_interpolate_nf')
 
 	%i need to add the logprob values to the trialinfo in the d files, if logprob =
 	% 999.99 this means that the word was not part of the vocabulary, this means that
 	% the word is most probably one of the pseudowords in the stories, these words
 	% should be removed from the analysis
+	disp('added log prob to trialinfo')
 	ti = add_logprob(d);
 	d.old_trialinfo = d.trialinfo;
 	d.trialinfo = ti;
+	
+	%interpolation of bad channels (is based on variance and correlation on the post ica clean files
+	disp('interpolating bad channels')
+	d = channel_interpolate([],d);
+	disp('writing data to filename')
+	disp(d.filename)
 	write_data(d.filename,d)
+	% end of clean no reconstruct subtract --------------------------------------------------
+
+	% create clean - reconstruct MTRF
+
+	%clean reconstruct is ica cleaned story trials, with story2word, word trials are created 
+	disp('creating word trials based on clean - reconstruct (mtrf) and no hp filtering')
+	drecon = load(fnrecon(i).name);
+	drecon = drecon.d;
+	disp(drecon.filename)
+	d = temp;
+	disp(d.filename)
+	d = subtract_reconstruction(d,drecon);
+	c.hpfilter = 'no';
+	d = story2word_trials(c,d);
+	%interpolation of bad channels (is based on variance and correlation on the post ica clean files
+	disp('interpolating bad channels')
+	d = channel_interpolate([],d);
+	disp('writing data to filename')
+	disp(d.filename)
+	write_data(d.filename,d)
+	% end of clean no reconstruct subtract --------------------------------------------------
+
+	% create clean - reconstruct MTRF
+
+	%clean reconstruct is ica cleaned story trials, with story2word, word trials are created 
+	disp('creating word trials based on clean - reconstruct (mtrf) and no hp filtering')
+	drecon = load(fnrecon(i).name);
+	drecon = drecon.d;
+	disp(drecon.filename)
+	d = temp;
+	disp(d.filename)
+	d = subtract_reconstruction(d,drecon);
+	c.hpfilter = 'no';
+	d = story2word_trials(c,d);
+	d.clean_input1 = temp.input_file1;
+	d.clean_input2 = temp.input_file2;
+	d.input_file = temp.filename;
+	d.filename = strcat(fn(i).name(1:7),'_clean_word_interpolate_nf_recon')
+
 	disp('added log prob to trialinfo')
+	ti = add_logprob(d);
+	d.old_trialinfo = d.trialinfo;
+	d.trialinfo = ti;
+
+	%interpolation of bad channels (is based on variance and correlation on the post ica clean files
+	disp('interpolating bad channels')
+	d = channel_interpolate([],d);
 	disp('writing data to filename')
 	disp(d.filename)
 	write_data(d.filename,d)
 
+	% end of clean - reconstruct MTRF --------------------------------------------------
+
 	%faster if you immediately check for bad trials
 	%check threshold and return bad trial indices for each pp in the post ica files (clean)
-	disp('create threshold file')
+	disp('create threshold file for both clean and clean-reconstruct (based on the latter)')
 	cfg = check_threshold(d);
-	output = strcat(fn(i).name(1:7),'_threshold_clean_wordcfg_alt')
+	output = strcat(fn(i).name(1:7),'_threshold_clean_wordcfg_no_filter')
 	write_file(output,cfg)
 
 end
+
 %------------------------------------------------------------------------------------------
+fn = dir('*clean_word_interpolate_nf.mat')
+cfg = [];
+for i = 1: length(fn)
+	load(fn(i).name);
+	disp(fn(i).name);
+	cfg = prep_nsr_erp_all_pp(cfg,d);
+	outname = strcat(cfg.current_file,'_cfg_nsr')
+	write_file(outname,cfg);
+end
+
+
+fn = dir('*clean_word_interpolate_nf_recon.mat')
+cfg_recon = [];
+for i = 1: length(fn)
+	load(fn(i).name);
+	disp(fn(i).name);
+	cfg_recon = prep_nsr_erp_all_pp(cfg_recon,d);
+	outname = strcat(cfg_recon.current_file,'_cfg_nsr')
+	write_file(outname,cfg_recon);
+end
+
+cfg_all = nsr_erp_all_pp(cfg);
+write_file('all_pp_nf_nsr',cfg_all);
+cfg_recon_all = nsr_erp_all_pp(cfg_recon);
+write_file('all_pp_nf_recon_nsr',cfg_all);
+
+
+
 
 %--------------------------------------------------
 %comparing clean pre interpolate ( 01/09/16 11:45 clean story files) with old overlap clean files, with no overlap interpolate word files (last one will be used in analysis). FOund that interpolate mostly performs best (least number of threshold rejection (however it has a larger range of amplitudes compared to old overlap files) in one case 8-3 interpolate word file was really bad (old)11% -> interpolate(83%)
@@ -302,101 +499,6 @@ for i = 1 : length(fno)
 end
 
 fclose(fout);
-%
-
-%------------------------------
-%begin of blink plots Mon 29 Aug 2016 04:54:36 PM CEST 
-%--------------------------
-
-%create plots (of blink trials, that compare ica-cleaned-data with the preproc-data
-
-fn = dir('*rejectblink.mat');
-for i = 1 : length(all_pp);
-	 load(fn(i).name)
-	 pp = d.blinks;
-	 pp.file_id = fn(i).name(1:7);
-    plot_clean_preproc(pp) %plots 10 blink trials
-end
-
-%---------------------------
-%alternative plots of blinks trials, instead of word trials -> story trials, it compares reject -ica comps and clean
-fn = dir('EEG/*_reject.mat')
-fni = dir('EEG/*_ica.mat')
-fnc = dir('EEG/*_clean.mat')
-for i = 1 : length(fn)
-	load(fn(i).name)
-	ica = load(fni(i).name)
-	clean = load(fnc(i).name)
-	cfg.ci = 'Fz';
-	clf;
-	hold on
-	easy_plot(cfg,d)
-	easy_plot(cfg,clean.d)
-	cfg.ci = clean.d.component;
-	easy_plot(cfg,ica.d)
-	hold off	
-	fig = gcf;
-	saveas(fig,strcat(d.filename(1:7),'_blinkstory_plot.png'));
-end
-
-%----------------------------------------
-%end of blink plots Mon 29 Aug 2016 04:54:36 PM CEST 
-%----------------------------------------
-
-%----------------------------------------
-%create baseline erp amplitude correlation with different filter setting
-%----------------------------------------
-fn = dir('*clean_word_interpolate.mat')
-baseline_erp_correlation = [];
-for i = 1 : length(fn)
-	load(fn(i).name);
-	d = story2word_trials([],d);	
-	for freq = [0 0.25 0.3 0.5]
-		cfg.hpfreq = freq;
-		output = correlation_baseline_erp(cfg,d);
-		baseline_erp_correlation = [baseline_erp_correlation output];
-	end
-end
-write_file('baseline_erp_correlation1',baseline_erp_correlation);
-
-load('baseline_erp_correlation.mat');
-for i = 1:4
-	berp = [];
-	freq =i:4:73*4;
-	temp = d(freq);
-	berp.average = mean([temp(:).cor]);
-	berp.sd = std([temp(:).cor]);
-	berp.freq = [temp(1:5).hpfreq];
-	berp.id = [temp.pp_id];
-	berp
-end
-%----------------------------------------
-% 31/08/16 14:01 , found that hp filter of 0.3 results in lowest correlation between baseline and erp window 
-% used to create clean_word_interpolate files, which can be the basis for my analysis
-% end create baseline erp amplitude correlation 
-%----------------------------------------
-
-
-%all trials that exceed threshold are saved to a cfg file, this can be used lateron to be removed before other steps, use this code:
-%cfg.trials = setdiff(1:length(d.trial),preproc_cfg.d.rejected_trials);
-%d        = ft_selectdata(cfg, d); 
-%---------------------------
-%important note, I did not make clean_threshold files, to save on disk space
-
-%it is thus very important to remove the rejected trials each time i load the 
-%clean files, i will write a function called reject_files to do this.
-%
-%-------------------------  
-
-%--------------------------------------------------------------------------------
-%create condition structure
-%--------------------------------------------------------------------------------
-%first group pp id according to day and reduced and unreduced 
-%this is based on the preproc cfg file
-pp = make_pp_groups();
-save('pp_groups_alt.mat','pp')
-%--------------------------------------------------------------------------------
-%select trials: open classed words (higher lower quantile, or all) remove
 %closed class words, threshold rejected trials and pseudowords
 load('pp_groups_alt.mat')
 pp = select_trials(pp);
@@ -559,22 +661,24 @@ end
 %------------------------------------------------------------------------------------------
 %save averages to output file
 
-fn = dir('EEG/*clean_word_interpolate.mat')
+% extract data from not hp filtered files 
+fn = dir('*clean_word_interpolate_nf.mat')
 cfg = [];
 c.setup = 'post_hoc';
 cfg.channels = channel_setup(c);
-cfg.name = 'post_hoc';
+cfg.name = 'post_hoc_nf';
 for i = 1 : length(fn)
    fn(i).name
    load(fn(i).name);
    d2output(cfg,d)
 end
 
-fn = dir('EEG/*clean_word_interpolate_alt.mat')
+% extract data from not hp filtered files with MTRF reconstruction
+fn = dir('*clean_word_interpolate_nf_recon.mat')
 cfg = [];
 c.setup = 'post_hoc';
 cfg.channels = channel_setup(c);
-cfg.name = 'post_hoc_alt';
+cfg.name = 'post_hoc_nf_recon';
 for i = 1 : length(fn)
    fn(i).name
    load(fn(i).name);
@@ -630,15 +734,15 @@ grand_average_n.avg = compute_grandaverage(all_pp_con,'no')
 grand_average_n.conditions = all_pp_con{1}.deviant.label
 
 %plot grand averages
-plot_grand_average(grand_average_n)
+channels = channel_setup(cfg)
+channel_indices = [6 19 20 8 48 17 11 10 15 42 43 44]; %index of channel should be added to output channel_setup
+%posterior setup
+row = 4;
+col = 7;
+channels = channel_setup([]);
+channel_indices = [36 6 35 19 52 20 51 8 38 9 48 18 49 17 40 11 39 10 47 15 46 42 43 44];
 
 
-fn = dir('ppn*clean_threshold.mat')
-for i = 1 : length(fn)
-    fn(i).name
-    load(fn(i).name);
-    create_bins(data);
-end
-
-stat = compute_cluster(grand_average)
-save('stats.mat', 'stat')
+%day1
+for i = 1 :length(channels) 
+	subplot(row,col,i)
