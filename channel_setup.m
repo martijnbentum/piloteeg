@@ -22,7 +22,7 @@ end
 
 if strcmp(cfg.setup,'post_hoc')
 	channels = [c(4) cp(4) p([2 4 6]) po];
-	disp('output base on these channels')
+	disp('output based on these channels')
 	disp(channels)
 
 end
