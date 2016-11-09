@@ -48,7 +48,7 @@ squared_differences
 
 %this computes the average per sample energy by normalizing the squared differences by the total number of sample
 %and uses a scaling factor used in praat for db calculations (the constant shifts db 0 to hearing threshold, maybe not so relevant here
-mean_energy_residuals = (squared_differences / length(erp.trial) * n_samples)  * scaling_constant_db;
+mean_energy_residuals = (squared_differences / (length(erp.trial) * n_samples))  * scaling_constant_db;
 
 disp('mean energy residuals per channel')
 mean_energy_residuals
