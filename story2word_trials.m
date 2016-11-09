@@ -8,7 +8,7 @@ function output = story2word_trials(cfg,d)
 if ~isfield(cfg,'hpfilter'),cfg.hpfilter = 'yes';end
 if ~isfield(cfg,'hpfreq'),cfg.hpfreq = 0.05; end
 if ~isfield(cfg,'hpfiltord'),cfg.hpfiltord = 4;end
-if ~isfield(cfg,'redefine'),cfg.redefine = d.redefine;end
+if ~isfield(cfg,'redefine'),cfg.redefine = d.cfg_redefine;end
 
 %create word trials based on the cfg redefine structure
 output = ft_redefinetrial(cfg.redefine,d);
